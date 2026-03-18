@@ -21,8 +21,9 @@ wechat = None
 import os
 from dotenv import load_dotenv
 
-# 加载 .env 文件
-load_dotenv()
+# 加载根目录的 .env 文件
+env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+load_dotenv(env_path)
 
 # --- 简单内存缓存 ---
 class SimpleCache:
