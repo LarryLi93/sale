@@ -238,17 +238,70 @@ export default function ProductList({
     );
   };
 
-  const filteredList = (data.list || []).filter(group => {
+  const allGroups = (data.list || []) as ProductGroup[];
+  const filteredList = allGroups.filter(group => {
     if ('list' in group && Array.isArray(group.list)) {
       return group.list.length > 0;
     }
     return false;
   }) as ProductGroup[];
 
+  // 检查是否有任何条件筛选可以展示（用于数据为空时显示条件）
+  const hasQueryGroups = allGroups.some(group => group.query);
+
   if (filteredList.length === 0) {
     return (
       <div className="mt-1 pt-1">
         {thinkElement}
+        {/* 数据为空但显示条件筛选 */}
+        {hasQueryGroups && (
+          <div className="flex flex-col gap-3 mb-4">
+            {allGroups.map((group, idx) => (
+              group.query && (
+                <div key={idx} className={`flex flex-col gap-2 ${idx > 0 ? 'mt-3 border-t border-gray-100 pt-3' : ''}`}>
+                  {/* 标题和筛选按钮区域 */}
+                  <div className="flex items-center justify-between">
+                    {group.title && (
+                      <h3 className="text-base font-bold text-gray-900">{group.title}</h3>
+                    )}
+                    <button 
+                      onClick={() => toggleQuery(idx)}
+                      className="text-[10px] text-blue-500 hover:text-blue-600 flex items-center gap-0.5"
+                    >
+                      {expandedQueries[idx] ? '收起条件' : '查看条件'}
+                      {expandedQueries[idx] ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                    </button>
+                  </div>
+                  
+                  {/* reson 展示区域 */}
+                  {(() => {
+                    let queryObj: any = null;
+                    try {
+                      queryObj = typeof group.query === 'string' ? JSON.parse(group.query) : group.query;
+                    } catch (e) {}
+                    
+                    const reson = queryObj?.reson || queryObj?.reason;
+                    if (reson) {
+                      return (
+                        <div className="flex gap-2 leading-relaxed text-[14px] px-0.5">
+                          <span className="text-black-600 break-all">{reson}</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  
+                  {/* 筛选条件详情 */}
+                  {group.query && expandedQueries[idx] && (
+                    <div className="bg-gray-50/80 rounded-lg p-2.5 border border-gray-100 text-[11px] text-gray-500 font-sans animate-in fade-in slide-in-from-top-1 duration-200 shadow-sm">
+                      {renderQueryDetails(group.query)}
+                    </div>
+                  )}
+                </div>
+              )
+            ))}
+          </div>
+        )}
         <div className="flex flex-col items-center justify-center mt-2 pt-4 pb-2">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
             <svg className="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
