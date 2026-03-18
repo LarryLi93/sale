@@ -17,7 +17,7 @@ PID=$(lsof -ti:$PORT)
 if [ -z "$PID" ]; then
     echo "端口 $PORT 当前没有被任何进程占用"
     echo -e "\n正在启动新API服务"
-    nohup python product_search_api.py > product_search_api.log 2>&1 &
+    nohup python api_server.py > api_server.log 2>&1 &
     exit 0
 fi
 
@@ -28,7 +28,7 @@ echo -e "\n正在终止进程(PID): $PID"
 kill -9 $PID
 
 echo -e "\n正在启动新API服务"
-nohup python product_search_api.py > product_search_api.log 2>&1 &
+nohup python api_server.py > api_server.log 2>&1 &
 
 
 
