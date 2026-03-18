@@ -1069,7 +1069,7 @@ export default function App() {
   
   const [codeStart, setCodeStart] = useState<string[]>(() => {
     const saved = getCookie('codeStart');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : ['6', '7', '9'];
   });
   
   const [searchType, setSearchType] = useState(() => {
