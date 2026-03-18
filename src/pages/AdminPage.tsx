@@ -380,10 +380,12 @@ const AdminPage: React.FC = () => {
   const handleSaveRule = async () => {
     setRuleLoading(true);
     try {
+      // 将所有双引号替换为单引号
+      const processedContent = ruleContent.replace(/"/g, "'");
       const response = await fetch(`${API_BASE_URL}/agent_prompt`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agent: 'sale', prompt: ruleContent })
+        body: JSON.stringify({ agent: 'sale', prompt: processedContent })
       });
       if (response.ok) {
         alert('规则保存成功');
