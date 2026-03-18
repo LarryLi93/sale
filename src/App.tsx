@@ -1389,12 +1389,34 @@ export default function App() {
                   // 先尝试解析为 JSON（组件格式）
                   try {
                     const parsedContent = JSON.parse(content);
-                    // 成功解析为 JSON，说明是组件数据
-                    hasReceivedComponent = true;
-                    if (Array.isArray(parsedContent)) {
-                      components = parsedContent;
+                    // 只有解析后是对象/数组且包含 element 字段时才当作组件
+                    const isComponent = 
+                      (typeof parsedContent === 'object' && parsedContent !== null &&
+                       (parsedContent.element || (Array.isArray(parsedContent) && parsedContent.length > 0 && parsedContent[0].element)));
+                    
+                    if (isComponent) {
+                      // 是组件数据
+                      hasReceivedComponent = true;
+                      if (Array.isArray(parsedContent)) {
+                        components = parsedContent;
+                      } else {
+                        components = [parsedContent];
+                      }
                     } else {
-                      components = [parsedContent];
+                      // 解析成功但不是组件格式（如数字、纯字符串等），当作文本
+                      textContent += content;
+                      // 实时更新流式文本
+                      setMessages(prev => {
+                        const newMessages = [...prev];
+                        const lastIndex = newMessages.length - 1;
+                        if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                          newMessages[lastIndex] = {
+                            ...newMessages[lastIndex],
+                            text: textContent
+                          };
+                        }
+                        return newMessages;
+                      });
                     }
                   } catch {
                     // 不是 JSON，当作纯文本流式拼接
@@ -1437,16 +1459,39 @@ export default function App() {
               if (typeof content === 'string') {
                 try {
                   const parsedContent = JSON.parse(content);
-                  hasReceivedComponent = true;
-                  components = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+                  // 只有解析后是对象/数组且包含 element 字段时才当作组件
+                  const isComponent = 
+                    (typeof parsedContent === 'object' && parsedContent !== null &&
+                     (parsedContent.element || (Array.isArray(parsedContent) && parsedContent.length > 0 && parsedContent[0].element)));
+                  
+                  if (isComponent) {
+                    hasReceivedComponent = true;
+                    components = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+                  } else {
+                    // 解析成功但不是组件格式，当作文本
+                    if (!hasReceivedComponent) {
+                      textContent += content;
+                    }
+                  }
                 } catch {
+                  // 不是 JSON，当作文本
                   if (!hasReceivedComponent) {
                     textContent += content;
                   }
                 }
               } else if (typeof content === 'object') {
-                hasReceivedComponent = true;
-                components = Array.isArray(content) ? content : [content];
+                // content 是对象，需要检查是否是组件
+                const isComponent = 
+                  (content.element || (Array.isArray(content) && content.length > 0 && content[0].element));
+                if (isComponent) {
+                  hasReceivedComponent = true;
+                  components = Array.isArray(content) ? content : [content];
+                } else {
+                  // 不是组件格式，当作文本
+                  if (!hasReceivedComponent) {
+                    textContent += JSON.stringify(content);
+                  }
+                }
               }
             }
           } catch (e) {
