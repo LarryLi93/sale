@@ -113,7 +113,7 @@ const KnowledgeQA = ({ data }: { data: ComponentData }) => {
           </div>
           <span className="text-sm font-medium text-blue-700">知识问答</span>
         </div>
-        <div className="text-[15px] leading-relaxed text-gray-700">
+        <div className="text-[15px] leading-relaxed text-gray-700 markdown-content">
           <ReactMarkdown>{data.text}</ReactMarkdown>
         </div>
       </div>
@@ -452,7 +452,7 @@ const ChatMessage = ({
                 <div className="py-2">
                   {/* 流式文本显示在步骤条上方 */}
                   {message.text && (
-                    <div className="mb-3 text-[15px] leading-relaxed break-words text-gray-800">
+                    <div className="mb-3 text-[15px] leading-relaxed break-words text-gray-800 markdown-content">
                       <ReactMarkdown>{message.text}</ReactMarkdown>
                     </div>
                   )}
@@ -511,7 +511,7 @@ const ChatMessage = ({
             const hasProductList = message.components.some((c: any) => c.element === '商品列表');
             if (hasProductList) return null;
             return message.text && !isLoading ? (
-              <div className={`text-[15px] leading-relaxed break-words ${isUser ? 'text-black' : 'text-gray-800'}`}>
+              <div className={`text-[15px] leading-relaxed break-words markdown-content ${isUser ? 'text-black' : 'text-gray-800'}`}>
                 <ReactMarkdown>{message.text}</ReactMarkdown>
               </div>
             ) : null;
