@@ -2901,6 +2901,14 @@ async def get_product_list(request: ProductListRequest):
     
     where_sql = " AND ".join(where_conditions)
     
+    # 过滤价格和克重为0或空的产品（确保数据有效性）
+    price_fields = ['price', 'taxkgprice', 'taxmprice', 'fewprice', 'kgprice']
+    for field in price_fields:
+        where_sql += f" AND (CAST({field} AS DECIMAL) > 0 OR {field} IS NULL)"
+    
+    # 克重字段过滤（weight 为0或空的产品也过滤掉）
+    where_sql += " AND (CAST(weight AS DECIMAL) > 0 OR weight IS NULL)"
+    
     # 排序处理
     sort_field = request.sort_by if request.sort_by and request.sort_by in PRODUCT_LIST_FIELDS else "sale_num_year"
     sort_order = "DESC" if request.sort_order.lower() == "desc" else "ASC"
