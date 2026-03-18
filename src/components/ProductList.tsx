@@ -2,6 +2,13 @@ import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
+// 修复 Markdown 格式问题（如 ** text ** → **text**）
+const fixMarkdown = (text: string): string => {
+  if (!text) return text;
+  // 修复加粗：** text ** → **text**
+  return text.replace(/\*\*\s+([^*]+?)\s+\*\*/g, '**$1**');
+};
+
 export type Product = {
   name: string;
   code: string;
@@ -165,7 +172,7 @@ export default function ProductList({
     <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-3 mb-1">
       <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-li:my-0.5">
         <ReactMarkdown>
-          {thinkCompleted ? data.think : displayedThink}
+          {fixMarkdown(thinkCompleted ? data.think : displayedThink)}
         </ReactMarkdown>
         {!thinkCompleted && <span className="inline-block w-1 h-4 ml-1 bg-orange-400 animate-pulse align-middle" />}
       </div>

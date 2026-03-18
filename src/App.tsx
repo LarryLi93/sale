@@ -4,6 +4,13 @@ import { Mic, Check, ChevronRight, RefreshCw, Image as ImageIcon, X, ArrowLeft, 
 import ReactMarkdown from 'react-markdown';
 import ProductList, { Product, ProductGroup, ComponentData } from './components/ProductList';
 
+// 修复 Markdown 格式问题（如 ** text ** → **text**）
+const fixMarkdown = (text: string): string => {
+  if (!text) return text;
+  // 修复加粗：** text ** → **text**
+  return text.replace(/\*\*\s+([^*]+?)\s+\*\*/g, '**$1**');
+};
+
 type MaterialItem = {
   url: string;
   name?: string;
@@ -114,7 +121,7 @@ const KnowledgeQA = ({ data }: { data: ComponentData }) => {
           <span className="text-sm font-medium text-blue-700">知识问答</span>
         </div>
         <div className="text-[15px] leading-relaxed text-gray-700 markdown-content">
-          <ReactMarkdown>{data.text}</ReactMarkdown>
+          <ReactMarkdown>{fixMarkdown(data.text)}</ReactMarkdown>
         </div>
       </div>
     </div>
@@ -453,7 +460,7 @@ const ChatMessage = ({
                   {/* 流式文本显示在步骤条上方 */}
                   {message.text && (
                     <div className="mb-3 text-[15px] leading-relaxed break-words text-gray-800 markdown-content">
-                      <ReactMarkdown>{message.text}</ReactMarkdown>
+                      <ReactMarkdown>{fixMarkdown(message.text)}</ReactMarkdown>
                     </div>
                   )}
                   {/* 步骤条显示在流式文本下方 */}
@@ -512,7 +519,7 @@ const ChatMessage = ({
             if (hasProductList) return null;
             return message.text && !isLoading ? (
               <div className={`text-[15px] leading-relaxed break-words markdown-content ${isUser ? 'text-black' : 'text-gray-800'}`}>
-                <ReactMarkdown>{message.text}</ReactMarkdown>
+                <ReactMarkdown>{fixMarkdown(message.text)}</ReactMarkdown>
               </div>
             ) : null;
           })()}
