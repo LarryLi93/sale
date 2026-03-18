@@ -2905,6 +2905,12 @@ async def get_product_list(request: ProductListRequest):
     sort_field = request.sort_by if request.sort_by and request.sort_by in PRODUCT_LIST_FIELDS else "sale_num_year"
     sort_order = "DESC" if request.sort_order.lower() == "desc" else "ASC"
     
+    # 对数值字段进行类型转换，确保按数值排序而非字符串排序
+    if sort_field in NUMERIC_FIELDS:
+        sort_field_sql = f"CAST({sort_field} AS DECIMAL)"
+    else:
+        sort_field_sql = sort_field
+    
     def fetch_product_list():
         conn = None
         try:
@@ -2921,7 +2927,7 @@ async def get_product_list(request: ProductListRequest):
                     SELECT {fields_sql} 
                     FROM ai_product_app_v1 
                     WHERE {where_sql}
-                    ORDER BY {sort_field} {sort_order}
+                    ORDER BY {sort_field_sql} {sort_order}
                     LIMIT %s OFFSET %s
                 """
                 cursor.execute(sql, params + [page_size, offset])
