@@ -867,6 +867,7 @@ const PreferenceModal = ({
     { value: '推理', label: '推理' }
   ];
   const codeStartOptions = [
+    { value: '2', label: '2系列' },
     { value: '3', label: '3系列' },
     { value: '6', label: '6系列' },
     { value: '7', label: '7系列' },
@@ -1068,7 +1069,7 @@ export default function App() {
   
   const [codeStart, setCodeStart] = useState<string[]>(() => {
     const saved = getCookie('codeStart');
-    return saved ? JSON.parse(saved) : ['6', '7', '9'];
+    return saved ? JSON.parse(saved) : [];
   });
   
   const [searchType, setSearchType] = useState(() => {
