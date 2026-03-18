@@ -383,6 +383,9 @@ def ensure_image_url(img_item: str) -> str:
     if not img_item:
         return img_item
     
+    # 从环境变量获取图片基础URL，默认为 https://lobe.wyoooni.net
+    image_base_url = os.getenv('IMAGE_BASE_URL', 'https://lobe.wyoooni.net')
+    
     img_item = str(img_item).strip()
     
     # 检查是否是 "名称:URL" 格式
@@ -394,9 +397,9 @@ def ensure_image_url(img_item: str) -> str:
             # 如果 URL 部分不以 http 开头，说明需要拼接域名
             if not url.startswith('http://') and not url.startswith('https://'):
                 if url.startswith('/'):
-                    url = f"https://lobe.wyoooni.net{url}"
+                    url = f"{image_base_url}{url}"
                 else:
-                    url = f"https://lobe.wyoooni.net/{url}"
+                    url = f"{image_base_url}/{url}"
             return f"{name}:{url}"
     
     # 纯 URL 格式
@@ -405,9 +408,9 @@ def ensure_image_url(img_item: str) -> str:
     
     # 没有域名，拼接默认域名
     if img_item.startswith('/'):
-        return f"https://lobe.wyoooni.net{img_item}"
+        return f"{image_base_url}{img_item}"
     else:
-        return f"https://lobe.wyoooni.net/{img_item}"
+        return f"{image_base_url}/{img_item}"
 
 def serialize_row(row: Dict) -> Dict:
     """清洗数据：Decimal -> float, Date -> str, 处理 URL 列表"""
@@ -1894,15 +1897,16 @@ async def search_source(request_data: Any = Body(...)):
     logger.info(f"Search result: found {total} items for groups {kw_groups}")
     
     # 清洗数据并处理 pic_url 和 video_path 域名
+    image_base_url = os.getenv('IMAGE_BASE_URL', 'https://lobe.wyoooni.net')
     cleaned_rows = []
     for row in rows:
         serialized = serialize_row(row)
         # 处理图片域名
         if serialized.get('pic_url') and serialized['pic_url'].startswith('/'):
-            serialized['pic_url'] = f"https://lobe.wyoooni.net{serialized['pic_url']}"
+            serialized['pic_url'] = f"{image_base_url}{serialized['pic_url']}"
         # 处理视频域名
         if serialized.get('video_path') and serialized['video_path'].startswith('/'):
-            serialized['video_path'] = f"https://lobe.wyoooni.net{serialized['video_path']}"
+            serialized['video_path'] = f"{image_base_url}{serialized['video_path']}"
         cleaned_rows.append(serialized)
     
     return {
@@ -3157,4 +3161,5 @@ async def get_user_info_by_code(code: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8012)
+    port = int(os.getenv('API_PORT', '8012'))
+    uvicorn.run(app, host="0.0.0.0", port=port)
