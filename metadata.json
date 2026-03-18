@@ -1,0 +1,7 @@
+{
+  "name": "销售助手V5.0",
+  "description": "移动端聊天机器人界面，支持流式内容输出和数据内容输出",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
