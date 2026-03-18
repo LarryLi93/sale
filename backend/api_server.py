@@ -2780,6 +2780,7 @@ class ProductListRequest(BaseModel):
     filters: Optional[Dict[str, Any]] = Field(None, description="筛选条件字典")
     sort_by: Optional[str] = Field(None, description="排序字段")
     sort_order: Optional[str] = Field("desc", description="排序方向：asc/desc")
+    fields: Optional[List[str]] = Field(None, description="需要返回的字段列表，为空或未指定时返回默认字段")
     
     model_config = ConfigDict(extra="allow")
 
@@ -2854,7 +2855,18 @@ async def get_product_list(request: ProductListRequest):
     offset = (page - 1) * page_size
     
     # 构建查询字段
-    fields_sql = ", ".join(PRODUCT_LIST_FIELDS)
+    # 处理 fields 参数：如果为空数组或未指定，使用默认字段
+    requested_fields = getattr(request, 'fields', None)
+    if requested_fields and len(requested_fields) > 0:
+        # 确保只包含有效字段
+        valid_fields = [f for f in requested_fields if f in PRODUCT_LIST_FIELDS]
+        if valid_fields:
+            fields_sql = ", ".join(valid_fields)
+        else:
+            fields_sql = ", ".join(DEFAULT_RETURN_FIELDS)
+    else:
+        # 未指定或为空数组，使用默认字段
+        fields_sql = ", ".join(DEFAULT_RETURN_FIELDS)
     
     # 构建 WHERE 条件
     where_conditions = ["1=1"]
