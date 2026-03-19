@@ -130,7 +130,7 @@ app.put('/api/products/:code', async (req, res) => {
   }
 });
 
-const PORT = process.env.ADMIN_API_PORT || 8013;
+const PORT = process.env.ADMIN_API_PORT || 8012;
 app.listen(PORT, () => {
   console.log(`Admin API server running on port ${PORT}`);
 });
