@@ -502,6 +502,7 @@ def build_text_sql_filter(column, query_val):
     支持: 
     1. 字符串 (含 / 和 +)
     2. 列表 (转为 IN 或 OR 处理)
+    对 inelem 字段特殊处理，直接精确匹配（因为其值可能包含 / 和 + 字符）
     返回: (sql_clause, params)
     """
     if not query_val: return None, []
@@ -513,11 +514,21 @@ def build_text_sql_filter(column, query_val):
         if column == 'code_start':
             placeholders = ", ".join(["%s"] * len(query_val))
             return f"{column} IN ({placeholders})", [str(i) for i in query_val]
+        # inelem 字段列表格式也转为 OR 逻辑，但每个值保持完整
+        if column == 'inelem':
+            clauses = [f"{column} LIKE %s" for _ in query_val]
+            params = [f"%{str(v)}%" for v in query_val]
+            return f"({' OR '.join(clauses)})", params
         # 其他字段转为 OR 逻辑
         query_val = "/".join(str(i) for i in query_val)
     
     val = str(query_val).strip()
     if not val: return None, []
+    
+    # inelem 字段特殊处理：其值可能包含 / 和 +（如"40SRAC40/30/30紧赛纺 94.2%+40D双染氨纶"）
+    # 不对其进行逻辑解析，直接使用 LIKE 模糊匹配
+    if column == 'inelem':
+        return f"{column} LIKE %s", [f"%{val}%"]
 
     # 简单的单个词 (无 /、+ 和 ,)
     if '/' not in val and '+' not in val and ',' not in val:
@@ -557,13 +568,29 @@ def build_text_sql_filter(column, query_val):
     # 复杂逻辑 (既有 / 又有 +) 暂时只在 SQL 层做部分过滤或跳过
     return None, []
 
-def check_text_logic(target_text, query_str):
+def check_text_logic(target_text, query_str, column=None):
+    """
+    检查目标文本是否匹配查询逻辑
+    支持: OR (/) 和 AND (+) 逻辑
+    对 inelem 字段特殊处理，直接子串匹配（因为其值可能包含 / 和 + 字符）
+    """
     if not query_str: return True
+    
+    target_text = str(target_text or "").lower()
+    
+    # inelem 字段特殊处理：直接子串匹配，不解析 / 和 + 逻辑
+    if column == 'inelem':
+        if isinstance(query_str, list):
+            # 列表格式：任一匹配即可（OR 逻辑）
+            return any(str(q).lower().strip() in target_text for q in query_str if q)
+        else:
+            # 字符串格式：直接子串匹配
+            return str(query_str).lower().strip() in target_text
+    
     # 处理列表格式，默认转为 OR 逻辑
     if isinstance(query_str, list):
         query_str = "/".join(str(i) for i in query_str)
         
-    target_text = str(target_text or "").lower()
     query_str = str(query_str).lower()
     for group in query_str.split('/'):
         # 同时支持 + 、 , 和 中文逗号 、 作为 AND 逻辑
@@ -1065,6 +1092,7 @@ def build_hard_coded_sql_filter(column: str, query_val: str) -> tuple:
     """
     为硬指标字段构建SQL过滤条件
     支持 OR 逻辑（/ 分隔）和子串匹配
+    对 inelem 字段特殊处理，直接精确匹配（因为其值可能包含 / 和 + 字符）
     返回: (sql_clause, params)
     """
     if not query_val:
@@ -1073,6 +1101,11 @@ def build_hard_coded_sql_filter(column: str, query_val: str) -> tuple:
     val = str(query_val).strip()
     if not val:
         return None, []
+    
+    # inelem 字段特殊处理：其值可能包含 / 和 +（如"40SRAC40/30/30紧赛纺 94.2%+40D双染氨纶"）
+    # 不对其进行逻辑解析，直接使用 LIKE 模糊匹配
+    if column == 'inelem':
+        return f"{column} LIKE %s", [f"%{val}%"]
     
     # 按 / 分割为多个组（OR 关系）
     groups = [g.strip() for g in val.split('/') if g.strip()]
@@ -1370,9 +1403,7 @@ def perform_single_search(query: Dict[str, Any]) -> Dict[str, Any]:
                 if not check_composition_logic(row.get('elem'), val): 
                     match = False; break
             elif key in STRICT_TEXT_FIELDS:
-                if isinstance(val, list): 
-                    val = "/".join(str(i) for i in val)
-                if not check_text_logic(row.get(key), val): 
+                if not check_text_logic(row.get(key), val, column=key): 
                     match = False; break
         
         if not match:

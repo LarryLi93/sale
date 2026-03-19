@@ -1,5 +1,33 @@
 @import "tailwindcss";
 
+/* 防止移动端页面被拉拽（橡皮筋效果） */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+  touch-action: pan-y;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 允许输入框和文本区域的选择 */
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* 主应用容器固定，防止整体滚动 */
+#root {
+  height: 100vh;
+  height: 100dvh; /* 动态视口高度，适配移动端 */
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
