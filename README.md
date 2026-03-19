@@ -363,6 +363,81 @@ uvicorn api_server:app --reload --port 8000
 2. 在 `DEFAULT_RETURN_FIELDS` 中配置默认返回字段
 3. 前端 `Product` 类型定义中添加对应字段
 
+### 绕过企业微信登录（开发调试）
+
+在开发调试过程中，如果没有企业微信环境，可以通过浏览器控制台手动设置 Cookie 来模拟登录状态。
+
+#### 方法：手动设置 user_id Cookie
+
+1. **打开浏览器开发者工具**
+   - Chrome/Firefox/Edge: 按 `F12` 或 `Ctrl+Shift+I`
+
+2. **切换到 Console（控制台）标签**
+
+3. **执行以下 JavaScript 代码设置 Cookie**
+
+```javascript
+// 设置 user_id（替换为你想要的用户ID）
+document.cookie = "user_id=your_user_id; path=/; max-age=2592000";
+
+// 示例：设置为测试用户
+document.cookie = "user_id=test_user_001; path=/; max-age=2592000";
+
+// 验证是否设置成功
+console.log(document.cookie);
+```
+
+4. **刷新页面**
+   - 设置完成后刷新页面，系统会识别为已登录状态
+   - 右上角应显示用户信息（如图标和用户名）
+
+#### 可选：设置更多用户信息
+
+```javascript
+// 设置用户ID
+document.cookie = "user_id=developer_001; path=/; max-age=2592000";
+
+// 可选：同时设置会话ID
+document.cookie = "session_id=session_123456; path=/; max-age=2592000";
+
+// 验证所有 cookie
+console.log('Current cookies:', document.cookie);
+```
+
+#### 清除 Cookie（退出登录）
+
+```javascript
+// 将过期时间设为过去，即可删除 Cookie
+document.cookie = "user_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+document.cookie = "session_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+// 刷新页面后恢复未登录状态
+```
+
+#### 使用浏览器扩展（推荐）
+
+更方便的方式是使用浏览器扩展来管理 Cookie：
+
+**Chrome/Edge 推荐扩展：**
+- [Cookie-Editor](https://chrome.google.com/webstore/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm)
+- [EditThisCookie](https://chrome.google.com/webstore/detail/editthiscookie/fngmhnnpilhplaeedifhccceomclgfbg)
+
+**使用步骤：**
+1. 安装扩展后点击图标
+2. 添加新 Cookie：
+   - **Name**: `user_id`
+   - **Value**: `your_user_id`
+   - **Domain**: 你的域名（如 `localhost` 或 `your-domain.com`）
+   - **Path**: `/`
+3. 保存后刷新页面即可
+
+#### 注意事项
+
+- ⚠️ 此方法仅用于**开发调试**，生产环境请使用正常的企业微信登录
+- 设置的 Cookie 有效期为 30 天（`max-age=2592000`），可根据需要调整
+- 如果设置了无效的 `user_id`，可能导致后端无法获取用户信息
+- 建议在浏览器隐私/无痕模式下进行调试，避免影响正常登录
+
 ## 常见问题
 
 ### Q: 企业微信登录失败？
