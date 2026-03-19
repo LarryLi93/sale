@@ -618,9 +618,9 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* 顶部导航 - 沉浸式 */}
-      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100">
+    <div className="min-h-screen bg-white pt-14">
+      {/* 顶部导航 - 固定在顶部 */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100">
         <div className="flex items-center gap-3 px-4 h-14">
           <button 
             onClick={() => navigate(-1)}
@@ -788,8 +788,8 @@ export default function ProductDetailPage() {
       {/* 证书预览页面 */}
       {previewReport && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col">
-          {/* 顶部导航栏 */}
-          <div className="flex items-center justify-between px-4 h-14 bg-white border-b border-gray-100 flex-shrink-0">
+          {/* 顶部导航栏 - 固定在预览页面顶部 */}
+          <div className="flex items-center justify-between px-4 h-14 bg-white border-b border-gray-100 flex-shrink-0 sticky top-0 z-50">
             <button 
               onClick={closeReportPreview}
               className="flex items-center gap-1 text-gray-700 hover:text-gray-900 transition-colors"
@@ -830,8 +830,17 @@ export default function ProductDetailPage() {
                   </div>
                 );
               } else if (isPDF) {
-                // PDF 使用 react-pdf 本地预览
-                return <PDFViewer url={previewReport.url} name={previewReport.name} />;
+                // PDF 使用 iframe 嵌入预览
+                return (
+                  <div className="w-full h-full flex flex-col">
+                    <iframe
+                      src={previewReport.url}
+                      title={previewReport.name}
+                      className="w-full flex-1 border-0"
+                      style={{ minHeight: 'calc(100vh - 56px)' }}
+                    />
+                  </div>
+                );
               } else {
                 // 其他文件类型，提供下载提示
                 return (
@@ -858,7 +867,8 @@ export default function ProductDetailPage() {
 }
 
 // PDF 预览组件
-const PDFViewer = ({ url, name }: { url: string; name: string }) => {
+const PDFViewer = ({ url, name, originalUrl }: { url: string; name: string; originalUrl?: string }) => {
+  const downloadUrl = originalUrl || url;
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.2);
@@ -965,14 +975,22 @@ const PDFViewer = ({ url, name }: { url: string; name: string }) => {
           <div className="flex flex-col items-center justify-center h-full p-8">
             <FileText size={64} className="text-gray-300 mb-4" />
             <p className="text-gray-600 text-center mb-4">{error}</p>
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              下载文件
-            </a>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href={downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-center"
+              >
+                下载文件
+              </a>
+              <button
+                onClick={() => window.open(downloadUrl, '_blank')}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                新窗口打开
+              </button>
+            </div>
           </div>
         )}
 
@@ -981,6 +999,10 @@ const PDFViewer = ({ url, name }: { url: string; name: string }) => {
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={onDocumentLoadError}
           loading={null}
+          options={{
+            cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+            cMapPacked: true,
+          }}
           className="shadow-lg"
         >
           {!loading && !error && (
