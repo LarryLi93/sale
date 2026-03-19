@@ -1,0 +1,1978 @@
+{
+  "name": "应用-销售助手-4月",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "4mon",
+        "responseMode": "streaming",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        592,
+        288
+      ],
+      "id": "736adf3c-f126-43d2-8035-63131f4b81b7",
+      "name": "Webhook",
+      "webhookId": "6a6948a3-92b5-4e37-8576-cb75708f765c"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "/model",
+          "mode": "list",
+          "cachedResultName": "/model"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1072,
+        1248
+      ],
+      "id": "af47adf2-1b0a-4a1a-8d73-1ab12dc20c31",
+      "name": "AI模型",
+      "credentials": {
+        "openAiApi": {
+          "id": "gYqDCXtaSbWw4j7v",
+          "name": "169-Qwen-Next"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "enableStreaming": true
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        4608,
+        240
+      ],
+      "id": "50de5610-315b-4fb1-83fb-ec41e4b1255c",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a8b360f0-c69e-4200-8b5d-3fb8a6f3c713",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput || $json.body.chatInput}}",
+              "type": "string"
+            },
+            {
+              "id": "ea7f4467-b637-4f56-9f21-c347c07ecc3e",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId || $json.body.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "2d20edac-1c1a-4377-b25d-4f49a6a0c1d9",
+              "name": "searchType",
+              "value": "={{ ($json.body && $json.body.searchType) || \"精准\" }}",
+              "type": "string"
+            },
+            {
+              "id": "578168e1-78c4-4580-b1a3-fb4fa20c787f",
+              "name": "codeStart",
+              "value": "={{ $json.body.codeStart}}",
+              "type": "string"
+            },
+            {
+              "id": "2c3c853a-4043-44d0-83db-cc39fca287af",
+              "name": "typeNotes",
+              "value": "={{ $json.body.typeNotes }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        288
+      ],
+      "id": "febabc1a-1cb4-44f2-b626-a5b170a2a7e0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        592,
+        464
+      ],
+      "id": "6b03a540-6e74-40e1-a9d7-c0d2d8f8429d",
+      "name": "When chat message received",
+      "webhookId": "f3effb88-ca84-48ba-a6ae-d5698d060fdf"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "模糊查询",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "0fe3f7f2-a762-4aa7-bd24-346ea6e6dcec"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "89962baf-f473-463c-9ecd-61a8a0de525f",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "明确查询",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "31a1bd55-84e6-43ea-9e0b-cfb7f7638def",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "知识查询",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8568b68e-e07a-4eea-a15e-a9d440f68b10",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "素材查询",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5adecaf5-bb63-4162-a247-53d224a16976",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "平替查询",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e2ab188f-47b9-4604-b3b4-31511530edfc",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "提炼总结",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c385321d-a6a5-4f0b-9fdf-bde0c5457dbc",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "违规查询",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        272
+      ],
+      "id": "2550d557-c38f-4058-af32-d593a42d76d0",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取 HTTP Request 节点的所有 3 个 items\nconst httpItems = $(\"产品检索\").all();\n\n// 构造新的 JSON 结构\nreturn {\n  element:\"商品列表\",\n  think:$('整合输出').first().json.think,\n  list: httpItems.map(item => item.json) || []\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3664,
+        608
+      ],
+      "id": "224c77a6-e5da-414c-8786-0137ad0baee8",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "content": "# 模糊查询",
+        "height": 336,
+        "width": 1316
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        144
+      ],
+      "id": "726b6635-7235-428d-be83-9ef50eb92ba1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# 明确查询",
+        "height": 304,
+        "width": 1328
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2592,
+        528
+      ],
+      "id": "9a7dda70-d34a-441a-aa74-648db802456c",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# 意图分类",
+        "height": 832,
+        "width": 1940
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        560,
+        144
+      ],
+      "id": "7ef2d221-3899-4bf1-9fc2-01a7d9663db2",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "# Role\n你是一位专业的面料咨询顾问。你的核心任务是根据用户的输入，精准诊断其需求缺项，并从知识库中抽取匹配项，生成动态且专业的追问。\n\n# Constraints\n1. **严格限制输出**：仅输出一段话，无 Markdown、无前言、无总结。\n2. **字数控制**：60 字以内，保持专业、亲切。\n3. **动态逻辑约束**：\n   - **禁止**使用“建议您补充成分、布种、用途、克重”这种全量罗列的万能回复。\n   - **必须**先分析用户已知信息，仅针对“成分、布种、用途、克重”四个维度中的“缺失项”进行针对性补充引导。\n   - **强制随机性**：每次引导必须从对应字段中随机抽取 1-2 个示例，避免机械感。\n\n# Workflow\n1. **输入解析**：提取用户提到的维度，识别未提及的核心参数。\n2. **策略匹配**：\n   - 若缺失 > 2 项：侧重于宽泛范围定位。\n   - 若缺失 1-2 项：直接对缺失项进行精准提问。\n3. **内容生成**：将识别到的缺项、结合知识库的随机示例，融合成自然对话。\n\n# Knowledge Retrieval (引导示例源)\n# 面料知识库\n## 明确字段\n品名（慕斯羊绒，字符串格式）、款号（6327或6228A，数字/数字+字母格式）、克重、幅宽、大货价、含税公斤价、净布价、含税米价、散剪价、布种、成分、纱支、产品线、空差、纸筒、运营分类、季节、库存、色卡、颜色、销售话术、开发款号、抗起毛起球、搅浮色牢度、耐光色牢度、干摩擦牢度、近一年销量(条)、检测报告、可订等级、上架日期。\n\n### 成分\n人棉（RC）、人棉（粘胶纤维）、棉（棉花）、桑蚕丝（真丝）、亚麻（麻）、绵羊毛（羊毛）、氨纶（莱卡）、腈纶（人造羊毛）、腈纶（ACR）、莱赛尔（天丝）、聚酯纤维（涤纶）、聚酰胺纤维（尼龙）、莫代尔、粘纤（人造棉）、雪花棉、强捻、高捻、S捻、Z捻、国产莱赛尔、兰精天丝、锦纶；\n\n### 布种\n平纹（平针织）、珠地（菠罗布）、罗纹（坑条布）、罗纹（1x1拉架）、罗纹（2x2拉架）、罗纹（拉架）、盖丝、健康布（三明治网眼布）、提花、抽针（挑孔）、打鸡（打鸡布）、双层、抓绒（卫衣布）、毛巾布、空气层（三明治）、空气绒、阶梯（楼梯布）、肌理（纹理布）；\n\n### 工艺\n抓毛、碱缩、丝光、食毛、烧毛、砂洗、磨毛、刷毛；\n\n### 系列\n天丝羊毛、天丝麻、羊毛、羊绒、慕斯绒、麻、棉麻、新麻、棉涤、涤棉、ACR/RAC、RC、TC、混纺、纯纺、棉捻、棉莫、棉莱、雪花纱、棉混纺、桑蚕丝、棉天丝、莫代尔；\n\n## 其它字段\n功能fun：保暖、凉感、环保、抗菌、抗静电、美颜；\n廓形silhouette：垂坠、挺括、塑形；\n手感touch：蓬松、干爽、丝滑、爽滑、Q弹；\n品类/用途dressing_occasion：打底、时尚女装、卫衣、T恤、保暖内衣、家居服、裤料、运动内衣、瑜伽服、连衣裙、小件、无尺码自由裁、传统内衣、骑行、运动、轻运动、运动外套、套装、内衣、半裙、中间层、外穿层；\n适用人群applicable_crowd：女款、男款、通用、童装；\n风格style：休闲、打底、百搭、淑女、运动、潮牌、时尚、商务、正装；\n\n# Guidelines (互动话术原则)\n*   **话术结构**：[肯定已知信息] + [明确缺失项] + [引导示例]。\n*   **示例参考（请勿直接照搬）**：\n    *   若用户说“想要一款T恤面料”：了解您想做T恤，请问对成分（如棉/天丝）或布种（如珠地/平纹）有偏好吗？克重方面是否有明确要求？\n    *   若用户只给成分“棉”：收到棉类需求，请问布种偏向罗纹还是珠地？主要用于打底还是外穿，对克重有要求吗？\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2656,
+        240
+      ],
+      "id": "ea203d1b-d333-4133-b6e4-8186acde7ac1",
+      "name": "AI Agent3"
+    },
+    {
+      "parameters": {
+        "content": "# 数据整合",
+        "height": 320,
+        "width": 532
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4336,
+        144
+      ],
+      "id": "a51f9112-75c6-4758-881d-4db08c9d4817",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "# 知识查询(业务知识 + 文档RAG知识)",
+        "height": 512,
+        "width": 1456
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        928
+      ],
+      "id": "8c9dd530-1ecc-40da-b12d-c4296cff6b3a",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# 素材查询",
+        "height": 304,
+        "width": 1328
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        1520
+      ],
+      "id": "1ad07974-b7cd-498d-bb3c-fa2faaae5083",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "# 模型统一",
+        "height": 304,
+        "width": 1956
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        560,
+        1072
+      ],
+      "id": "f89bfdb1-90ae-4e58-9e62-fbab458b614e",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# Role\n你是一个专业的服装面料意图分类助手。你的核心任务是根据用户的输入，精准判断其查询意图，并将口语化表达或数值范围映射到标准维度中。\n\n# 意图清单与分类规则\n在判定前，请遵循以下思维链（Chain of Thought）：\n1. 检查是否为“知识查询”：若涉及公司相关问题、面料咨询、疑问、现象解释、评价、合规性，归类为知识问答。\n2. 检查是否为“素材查询”：若包含“图片/视频/素材/样衣”等（不含色卡/报告），归类为素材查询。\n3. 检查是否为“明确查询”：若包含知识库字段、可映射的描述词、明确的数值范围，并且提及的字段不属于模糊字段，归类为明确查询。\n4. 检查是否为“明确查询”：若包含知识库字段、可映射的描述词、明确的数值范围，并且提及的字段不属于模糊字段，归类为明确查询。\n5. 检查是否为“平替查询”：若包含“平替/替换/更xx/相似”等明显找替代品的，归类为平替查询。\n6. 检查是否为“提炼总结”：若包含“给XX角色/提炼/总结/卖点/话术/应对/方案/推下/推荐/是否有现货/是否有库存”等需要先查询产品信息，在提炼内容的，归类为提炼总结。\n8. 检查是否为“违规查询”：若用户问题违法业务知识规则时，归类为违规查询。\n7. 若以上均不满足，则归类为“模糊查询”。\n\n## 1. 明确查询 (Specific Query)\n定义：意图指向具体产品，不包含模糊字段，并满足以下任一特征：\n- 包含知识库枚举值（如：成分、布种、工艺、色牢度、色卡等所有知识库维度）。\n- 包含数值范围约束：涉及克重、价格、纱支等类似的区间或阈值（如：30-60元、>200g、200克以上、3级以上）。\n- 包含具体款号：如6327、6228\n- 包括具体品名：如慕斯羊绒\n- 包含具体适用性字段：如弹性好(即手感Q弹)\n- 包含找\"N\"款的需求：如找XX的5款\n\n## 2. 模糊查询 (Fuzzy Query)\n定义：有寻找产品的意图，包含无法量化或映射的模糊词。\n- 包括无法量化或映射的模糊词（如：大气的、高级的、不容易皱）\n\n## 3. 知识查询 (Knowledge Q&A)\n定义：获取信息、解释现象、确认事实（如：为什么、怎么看、是否、标准咨询）。\n\n## 4. 素材查询\n定义：提及“图片”、“视频”、“文档”、“素材”等需求。\n\n## 5. 无关查询\n定义：提及非“图片”、“视频”、“文档”、“素材”、“面料”等需求。\n\n# 面料知识库\n## 明确字段\n品名 name、款号 code（6327 或 6228A，数字 / 数字 + 字母格式）、克重 weight、幅宽 width、大货价 price、含税公斤价 taxkgprice、净布价 kgprice、含税米价 taxmprice、散剪价 fewprice、布种 className、成分 elem、纱支 inelem、产品线 series、空差 emptyqty、纸筒 papertubeqty、运营分类 type_name、库存 stock_qty、色卡 image_urls、颜色 color_name、销售话术 fabe、开发款号 devproid、抗起毛起球 unpilling、搅浮色牢度 spring_color_fastness、耐光色牢度 light_fastness、干摩擦牢度 dry_rubbing_fastness、近一年销量 (条) sale_num_year、检测报告 report_urls、上架日期 release_date、商品开头 code_start（2/3/6/7/9）。\n\n### 季节 season_marking\n春秋、秋冬、夏；\n\n### 成分elem\n人棉（RC）、人棉（粘胶纤维）、棉（棉花）、桑蚕丝（真丝）、亚麻（麻）、绵羊毛（羊毛）、氨纶（莱卡）、腈纶（人造羊毛）、腈纶（ACR）、莱赛尔（天丝）、聚酯纤维（涤纶）、聚酰胺纤维（尼龙）、莫代尔、粘纤（人造棉）、强捻、高捻、S捻、Z捻、国产莱赛尔、兰精天丝、锦纶；\n\n### 布种fabric_structure_two\n平纹（平针织）、珠地（菠罗布）、罗纹（坑条布）、罗纹（1x1拉架）、罗纹（2x2拉架）、罗纹（拉架）、盖丝、健康布（三明治网眼布）、提花、抽针（挑孔）、打鸡（打鸡布）、双层、抓绒（卫衣布）、毛巾布、空气层（三明治）、空气绒、阶梯（楼梯布）、肌理（纹理布）；\n\n### 工艺production_process\n抓毛、碱缩、丝光、食毛、烧毛、砂洗、磨毛、刷毛；\n\n### 系列series\n天丝羊毛、天丝麻、羊毛、羊绒、慕斯绒、麻、棉麻、新麻、棉涤、涤棉、ACR/RAC、RC、TC、混纺、纯纺、棉捻、棉莫、棉莱、棉混纺、桑蚕丝、棉天丝、莫代尔；\n\n## 适用性维度（都属于明确查询）\n功能fun：保暖、凉感、环保、抗菌、抗静电、美颜；\n廓形silhouette：垂坠、挺括、塑形；\n手感touch：蓬松、干爽、丝滑、爽滑、Q弹；\n品类/用途dressing_occasion：打底、时尚女装、卫衣、T恤、保暖内衣、家居服、裤料、运动内衣、瑜伽服、连衣裙、小件、无尺码自由裁、传统内衣、骑行、运动、轻运动、运动外套、套装、内衣、半裙、中间层、外穿层；\n适用人群applicable_crowd：女款、男款、通用、童装；\n风格style：休闲、打底、百搭、淑女、运动、潮牌、时尚、商务、正装；\n\n# 业务知识\n{{ $json.prompt }}\n\n# 输出格式要求\n你只需返回意图类型及（可选的）映射结果，格式为：\n{\n \"type\":\"<意图类型>\",\n \"params\":\"<适用性维度参数数组fun、silhouette、touch、dressing_occasion、applicable_crowd、style>,\n}\n\n## 四、输出格式\n只返回意图类型文本txt，无多余内容,不输出JSON：\n如：明确查询\n\n\n# Few-Shot 意图类型示例\n用户：“克重 300 以上的夏装面料” -> 违规查询\n用户：“3008 这个有现货/库存吗” -> 提炼总结\n用户：“如何给设计师推荐xx款” -> 提炼总结\n用户：“提炼下6327的卖点” -> 提炼总结\n用户：“6327的销售话术” -> 提炼总结\n用户：“推下 6228” -> 提炼总结\n用户：“和6327相似的面料” -> 平替查询\n用户：“比和6327便宜的面料” -> 平替查询\n用户：“找最便宜的5款” -> 明确查询\n用户：“和6327的色卡” -> 明确查询\n用户：“保暖的面料” -> 明确查询\n用户：“慕斯羊绒” -> 明确查询\n用户：“夏天的面料” -> 明确查询\n用户：“6327” -> 明确查询\n用户：“6228A” -> 明确查询\n用户：“找一款全棉的汗布” -> 明确查询\n用户：“弹力好的面料” -> 明确查询\n用户：“找30-60元的面料” -> 明确查询\n用户：“给我看200克以上的卫衣布” -> 明确查询\n用户：“适合做连衣裙的面料” -> 明确查询\n用户：“找看起来比较大气的” -> 模糊查询\n用户：“兰精天丝是什么成分？” -> 知识查询\n用户：“发下这个面料的图片” -> 素材查询"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1232,
+        272
+      ],
+      "id": "510d9f79-862b-4c73-a5de-96d7c4fcb630",
+      "name": "意图识别-LLM"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.4,
+      "position": [
+        3216,
+        1056
+      ],
+      "id": "dbdde047-cb3e-40d3-9e39-3b05bcea0608",
+      "name": "Retrieval QA Chain"
+    },
+    {
+      "parameters": {
+        "topK": 3
+      },
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "typeVersion": 1,
+      "position": [
+        3392,
+        1232
+      ],
+      "id": "99119c01-960e-4538-bf90-eb0ee603fcee",
+      "name": "Vector Store Retriever"
+    },
+    {
+      "parameters": {
+        "model": "Qwen/Qwen3-Embedding-8B",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3792,
+        1280
+      ],
+      "id": "a07af5f9-fc98-415e-82fb-36943811282f",
+      "name": "Embeddings (Qwen)1",
+      "credentials": {
+        "openAiApi": {
+          "id": "ozngk3Ud40Nw524K",
+          "name": "OpenAi 硅基流动"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "demo_1227",
+          "mode": "list",
+          "cachedResultName": "demo_1227"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        3712,
+        1120
+      ],
+      "id": "2f6e7118-c8da-4ac0-a7c2-22e90ecd3a27",
+      "name": "Qdrant Vector Store1",
+      "credentials": {
+        "qdrantApi": {
+          "id": "BM2cf3AJiEFvyT34",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "抽取用户查找素材的关键词，整理为JSON格式给我。\n只需要1个关键词。\n\n# 知识\n查报告时，关键词为“GBT”；\n查文档时，关键词为“pdf”;\n\n\n# 素材类型\nall、image、video、text\n\n# 输出格式（不带```json）\n{\n    \"type\":\"选填\"\n    \"keywords\":[\"A\",\"B\"]\n}\n\n\n# 输出案例\n问题：查出凉感素材给我\n{\n    \"type\":\"\"\n    \"keywords\":[\"凉感\"]\n}\n\n问题：6228的样衣图\n{\n    \"type\":\"\"\n    \"keywords\":[\"6228+样衣图\"]\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2656,
+        1632
+      ],
+      "id": "d17d1a77-7d27-49de-966a-227328536470",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3056,
+        1632
+      ],
+      "id": "5b8f1e75-16c1-41b7-a980-fef9cfe85532",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取 HTTP Request 节点的所有 3 个 items\nconst httpItems = $(\"HTTP Request1\").all();\n\n// 构造新的 JSON 结构\nreturn {\n  element:\"素材列表\",\n  list: httpItems.map(item => item.json) || []\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3632,
+        1632
+      ],
+      "id": "afa3227c-9622-43c2-8d43-17770f2556e2",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://139.196.198.169:8012/api/search_source",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Basic LLM Chain').item.json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3344,
+        1632
+      ],
+      "id": "1b36f403-f229-4c14-8ea8-9800bec7df80",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// 构造新的 JSON 结构\nreturn {\n  element:\"知识问答\",\n  text: $input.first().json.response.text\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3536,
+        1056
+      ],
+      "id": "667cc630-ef0d-4ee6-970a-18ee413e5a8b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "根据找面料产品的建议文案和面料知识库，列出3-5个给用户选择的建议补充清单，每个在10个字内。\n\n# 输出json格式（不带```json）\n{\n\"list\":[\"\",\"\",\"\"]\n}\n\n# 输出案例\n案例 1：针对“想找舒服的料子”\n{\n\"list\": [\"选择成分：棉、粘纤、天丝\", \"选择布种：平纹、罗纹、抓绒\", \"选择用途：T恤、卫衣、家居服\", \"选择手感：蓬松、干爽、丝滑\"]\n}\n案例 2：针对“有没有什么好的面料推荐”\n{\n\"list\": [\"明确用途：运动、内衣、外穿\", \"选择季节：春夏凉感、秋冬保暖\", \"确定成分：天然纤维或合成纤维\", \"确定克重范围或厚度要求\"]\n}\n案例 3：针对“找适合做女装的料子”\n{\n\"list\": [\"选择风格：淑女、休闲、通勤\", \"选择廓形：垂坠、挺括、塑形\", \"选择布种：平纹、提花、肌理\", \"选择功能：抗菌、抗静电、美颜\"]\n}\n案例 4：针对“找一种裤料”\n{\n\"list\": [\"选择成分：棉混纺、棉涤、锦纶\", \"选择工艺：砂洗、磨毛、丝光\", \"选择克重：轻薄款或厚实款\", \"选择布种：平纹、珠地、空气层\"]\n}\n\n# 面料知识库\n## 明确字段\n品名（慕斯羊绒，字符串格式）、款号（6327或6228A，数字/数字+字母格式）、克重、幅宽、大货价、含税公斤价、净布价、含税米价、散剪价、布种、成分、纱支、产品线、空差、纸筒、运营分类、季节、库存、色卡、颜色、销售话术、开发款号、抗起毛起球、搅浮色牢度、耐光色牢度、干摩擦牢度、近一年销量(条)、检测报告、可订等级、上架日期。\n\n### 成分\n人棉（RC）、人棉（粘胶纤维）、棉（棉花）、桑蚕丝（真丝）、亚麻（麻）、绵羊毛（羊毛）、氨纶（莱卡）、腈纶（人造羊毛）、腈纶（ACR）、莱赛尔（天丝）、聚酯纤维（涤纶）、聚酰胺纤维（尼龙）、莫代尔、粘纤（人造棉）、雪花棉、强捻、高捻、S捻、Z捻、国产莱赛尔、兰精天丝、锦纶；\n\n### 布种\n平纹（平针织）、珠地（菠罗布）、罗纹（坑条布）、罗纹（1x1拉架）、罗纹（2x2拉架）、罗纹（拉架）、盖丝、健康布（三明治网眼布）、提花、抽针（挑孔）、打鸡（打鸡布）、双层、抓绒（卫衣布）、毛巾布、空气层（三明治）、空气绒、阶梯（楼梯布）、肌理（纹理布）；\n\n### 工艺\n抓毛、碱缩、丝光、食毛、烧毛、砂洗、磨毛、刷毛；\n\n### 系列\n天丝羊毛、天丝麻、羊毛、羊绒、慕斯绒、麻、棉麻、新麻、棉涤、涤棉、ACR/RAC、RC、TC、混纺、纯纺、棉捻、棉莫、棉莱、雪花纱、棉混纺、桑蚕丝、棉天丝、莫代尔；\n\n## 其它字段\n功能fun：保暖、凉感、环保、抗菌、抗静电、美颜；\n廓形silhouette：垂坠、挺括、塑形；\n手感touch：蓬松、干爽、丝滑、爽滑、Q弹；\n品类/用途dressing_occasion：打底、时尚女装、卫衣、T恤、保暖内衣、家居服、裤料、运动内衣、瑜伽服、连衣裙、小件、无尺码自由裁、传统内衣、骑行、运动、轻运动、运动外套、套装、内衣、半裙、中间层、外穿层；\n适用人群applicable_crowd：女款、男款、通用、童装；\n风格style：休闲、打底、百搭、淑女、运动、潮牌、时尚、商务、正装；"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2960,
+        240
+      ],
+      "id": "1b605187-d200-4ea3-8c63-7b50119898ae",
+      "name": "Basic LLM Chain2"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3312,
+        240
+      ],
+      "id": "ab993760-6f44-449a-a3a2-df882844f717",
+      "name": "Edit Fields4"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// 构造新的 JSON 结构\nreturn {\n  element:\"问题建议\",\n  text: $input.first().json.list\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        240
+      ],
+      "id": "f3570b2c-c8df-44d2-9fdb-0bf950da304b",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Edit Fields').item.json.sessionId }}",
+        "contextWindowLength": 2
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1456,
+        1248
+      ],
+      "id": "e7d05fb0-b93c-4728-ae17-c0cfde64f05c",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ($json.body && $json.body.searchType) || \"精准\" }}",
+                    "rightValue": "精准",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "848fad6b-c528-4ba5-bd8e-da77692c521f"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2d292640-f2c4-4f4f-8165-c2e3ecd10aeb",
+                    "leftValue": "={{ ($json.body && $json.body.searchType) || \"精准\" }}",
+                    "rightValue": "推理",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2608,
+        608
+      ],
+      "id": "c8d44997-b66a-456a-ab91-a800f9160764",
+      "name": "搜索模式"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=# Role\n你是一个专业的面料知识库+业务知识库的AI查询助手，核心任务是理解用户的自然语言需求，将其精准转换为结构化的查询参数。\n\n# Data & Knowledge Base (面料知识库)\n\n## 客观维度\n品名 name、款号 code（6327 或 6228A，数字 / 数字 + 字母格式）、克重 weight、幅宽 width、含税米价 taxmprice、大货价 price、含税公斤价 taxkgprice、净布价 kgprice、散剪价 fewprice、布种 fabric_erp、成分 elem、纱支 inelem、产品线 series、空差 emptyqty、纸筒 papertubeqty、运营分类 type_name、库存 stock_qty、色卡 image_urls、颜色 color_name、销售话术 fabe、近一年销量 (条) sale_num_year、检测报告 report_urls、上架日期 release_date。\n\n### 成分elem\n人棉（RC）、人棉（粘胶纤维）、棉（棉花）、桑蚕丝（真丝）、亚麻（麻）、绵羊毛（羊毛）、氨纶（莱卡）、腈纶（人造羊毛）、腈纶（ACR）、莱赛尔（天丝）、聚酯纤维（涤纶）、聚酰胺纤维（尼龙）、莫代尔、粘纤（人造棉）、强捻、高捻、S捻、Z捻、国产莱赛尔、兰精天丝、锦纶；\n\n### 布种fabric_erp (若有1x1,优先匹配1X1罗纹，而不是罗纹)\n平纹（平针织）、单珠地（菠罗布）、珠地（菠罗布）、1X1罗纹、2X2罗纹、罗纹（坑条布）、盖丝、健康布（三明治网眼布）、提花、抽针（挑孔）、打鸡（打鸡布）、双层、毛巾布、空气层（三明治）、空气绒、阶梯（楼梯布）、肌理（纹理布）；\n\n### 工艺production_process\n抓毛、碱缩、丝光、食毛、烧毛、砂洗、磨毛、刷毛；\n\n### 系列series\n天丝羊毛、天丝麻、羊毛、羊绒、慕斯绒、麻、棉麻、新麻、棉涤、涤棉、ACR/RAC、RC、TC、混纺、纯纺、棉捻、棉莫、棉莱、棉混纺、桑蚕丝、棉天丝、莫代尔；\n\n## 季节season_marking\n春秋(春天/春秋/秋天)、秋冬(秋天/秋冬/冬天)、夏；\n\n## 主观维度\n功能fun：保暖、凉感、环保、抗菌、抗静电、美颜；\n廓形silhouette：垂坠、挺括、塑形；\n手感touch：蓬松、干爽/丝滑/爽滑、Q弹；\n品类/用途dressing_occasion：打底、时尚女装、卫衣、T恤、保暖内衣、家居服、裤料、运动内衣、瑜伽服、连衣裙、小件、无尺码自由裁、传统内衣、骑行、运动、轻运动、运动外套、套装、内衣、半裙、中间层、外穿层；\n适用人群applicable_crowd：女款、男款、通用、童装；\n风格style：休闲、打底、百搭、淑女、运动、潮牌、时尚、商务、正装；\n可订等级 customizable_grade:可订一等品;\n抗起毛起球 unpilling:2-3、3;\n搅浮色牢度 spring_color_fastness:1-2、2-3、3、3-4;\n耐光色牢度 light_fastness:浅色≥3、深色≥3-4;\n干摩擦牢度 dry_rubbing_fastness:3;\n\n## 2. Value Normalization (必须严格执行的俗称映射转换)\n当用户输入以下左侧词汇时，必须转换为右侧的知识库标准术语：\n- **【成分 elem】**: RC/粘胶纤维/粘纤/人造棉 -> 人棉；棉花 -> 棉；真丝 -> 桑蚕丝；麻 -> 亚麻；羊毛 -> 绵羊毛；莱卡 -> 氨纶；人造羊毛/ACR -> 腈纶；天丝 -> 莱赛尔；涤纶 -> 聚酯纤维；尼龙 -> 聚酰胺纤维。\n- **【布种 fabric_erp】**: 平针织 -> 平纹；菠萝/波罗 -> 珠地；坑条布/拉架 -> 罗纹；1x1罗纹 -> 1X1罗纹；2x2罗纹 -> 2X2罗纹；三明治/空气层 -> 健康布 (除非特指空气层)；挑孔 -> 抽针；打鸡布 -> 打鸡；楼梯布 -> 阶梯；纹理布 -> 肌理。\n- **【工艺 production_process】**: 抓绒 -> 抓毛 (作为工艺时)；磨毛/刷毛/摇粒/食毛/烧毛/砂洗/丝光/烫光/碱缩 -> 保持原词。\n- **【季节 season_marking】**: 春天/秋天/春秋 -> 春秋、秋天/冬天/秋冬 -> 秋冬\n\n## 3. Logical Syntax (语法规范)\n- **区间筛选**: 使用连字符或比较符。例 weight: \"200-300\",taxmprice:\"20-35\"\n- **成分逻辑(elem)**: \n  - 精确匹配: \"棉=100%\"\n  - 比例大于: \"棉>50%\"\n  - 同时包含(AND): \"棉+氨纶\"\n  - 选择包含(OR): \"棉/天丝\"\n  - 复杂组合: \"棉>30% + 聚酯纤维<60% + 氨纶\"\n- **多值筛选**: 使用数组。例 code_start: [6,9]\n\n## 4.业务知识库\n雪花/雪花棉/雪花纱：纱支或品名中含有雪花的产品，分name和inelem 2组查询；\n抓绒必须筛选工艺为“抓毛”的产品；\n{{ $('变量整合3').item.json.prompt }}\n\n# Execution Rules (核心工作流与要求)\n**要求1：动态分组查询策略（严格区分查询场景）**\n必须根据用户的提问意图，选择以下策略之一执行：\n\n- **款号场景：查询款号维度**\n  - **策略**：按款号维度，将用户提供的所有款号放入**同一个分组（单一 tool_call 对象）**中进行批量查询。\n  - **示例**：用户查“6327和6228A”，输出1个分组，包含 `款号:[\"6327\", \"6228A\"]`。\n\n- **客观场景：查询客观维度**\n  - **策略**：按需将1个或多个维度放入**分组（tool_call 对象）**中进行批量查询，分组数量按需划分，至少分6个组。\n  - **示例**：用户查“20-35元的1x1罗纹”，输出1个分组，包含 `含税米价`和`fabric_erp（1X1罗纹）`查询。\n  - **示例**：用户查“秋天打底”，输出1个分组，包含 `季节（\"春秋\", \"秋冬\"）`询和`用途（打底）`。\n  - **示例**：用户查“秋冬打底”，输出1个分组，包含 `季节（\"秋冬\"）`询和`用途（打底）`。\n\n- **主观场景：查询主观维度** \n  - **策略**：按（主观匹配维度 + 功能/廓形/手感/风格）的结构中进行分组，需要按以下示例进行分组。\n  - **示例**：\n  问题：\"适合连衣裙的面料\"（提及了用途）；\n  分组：用途（连衣裙）+功能（抗菌/环保）;\n  分组：用途（连衣裙）+功能（凉感）;\n  分组：用途（连衣裙）+廓形(垂坠/挺括/塑形);\n  分组：用途（连衣裙）+手感(干爽/爽滑/丝滑/Q弹);\n  分组：用途（连衣裙）+风格（打底百搭/休闲）;\n\n注意：这几个枚举值要一起传入,不能遗漏，功能（抗菌/环保）、廓形(垂坠/挺括/塑形)、手感(干爽/爽滑/丝滑/Q弹)、风格（打底百搭/休闲）。\n\n**要求2：用户俗语清洗**\n必须在后台默默完成用户的俗语到标准词的映射，如用户说“全麻”，转换为 `elem: \"亚麻=100%\"`，“棉和氨纶6%的”转化为“棉+氨纶>6%”，“棉80%和氨纶6%的”转化为“棉>80%+氨纶>6%”，“棉或氨纶的”转化为“棉/氨纶”。\n\n**要求3：展示给买家的选款思路 (think字段)**\n- 字数要求：30字左右，最长不超过70字,包含量化中文指标，不能输出英文字段。\n- 内容要求：向用户解释你的分组逻辑。如果是查款场景，直接说明已汇总查询；如果是主主观场景，**必须包含AI推理出的具体量化指标或标准词**。\n\n**要求4：输出格式规范**\n- 必须且只能输出严格的 JSON 格式。\n- 当用户无特定排序、字段选取或数量限制要求时，`sort_by` 、`limit`、`sort_order`、`fields` 字段留空。\n- 动态的查询条件（如 `weight`, `elem`, `touch` 等）直接作为平级键值对放在各个分组对象中。\n\n# tool_call案例\n单抓（即抓毛工艺）：款号中含“A”；\n双抓（即抓毛工艺）：款号中含“D”；\n\n# Output Format JSON \n1、注意，用户没有提及的维度，不能随意加上。\n2、请严格按照以下结构输出，不输出其它内容：\n{\n\"think\":\"<选款思路>\",\n\"tool_call\":[\n    {\n      \"title\": \"<围绕筛选重点命名，导购的口吻，7字内，如'高弹纯棉款'>\",\n      \"reson\": \"从用户需求出发，解释选择的理由，10-20字内，口语化，导购的描述风格\",\n      \"sort_by\": \"<排序字段>\",\n      \"sort_order\": \"<排序类型，asc/desc>\"\n      \"fields\": [],\n      \"<查询英文字段>\": \"<对应的1个或多个值，如'垂坠/挺括/塑形'>\"\n      ...\n    }\n  ]\n}",
+          "enableStreaming": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2848,
+        640
+      ],
+      "id": "3250b4a7-3d03-414f-b06d-40740ebbdd1b",
+      "name": "精准模式"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=# Role\n你是一个专业的面料知识库AI查询助手，专为服装买家和设计师提供面料选款服务。你的核心任务是理解用户的自然语言需求，将其精准转换为结构化的查询参数。\n\n# Data & Knowledge Base (面料知识库)\n\n## 客观维度\n品名 name、款号 code（6327 或 6228A，数字 / 数字 + 字母格式）、克重 weight、幅宽 width、含税米价 taxmprice、大货价 price、含税公斤价 taxkgprice、净布价 kgprice、散剪价 fewprice、布种 className、成分 elem、纱支 inelem、产品线 series、空差 emptyqty、纸筒 papertubeqty、运营分类 type_name、季节 season、库存 stock_qty、色卡 image_urls、颜色 color_name、销售话术 fabe、抗起毛起球 unpilling、搅浮色牢度 spring_color_fastness、耐光色牢度 light_fastness、干摩擦牢度 dry_rubbing_fastness、近一年销量 (条) sale_num_year、检测报告 report_urls、上架日期 release_date。\n\n### 可订等级 customizable_grade\n可订一等品\n\n### 成分elem\n人棉（RC）、人棉（粘胶纤维）、棉（棉花）、桑蚕丝（真丝）、亚麻（麻）、绵羊毛（羊毛）、氨纶（莱卡）、腈纶（人造羊毛）、腈纶（ACR）、莱赛尔（天丝）、聚酯纤维（涤纶）、聚酰胺纤维（尼龙）、莫代尔、粘纤（人造棉）、强捻、高捻、S捻、Z捻、国产莱赛尔、兰精天丝、锦纶；\n\n### 布种fabric_structure_two\n平纹（平针织）、珠地（菠罗布）、罗纹（坑条布）、罗纹（1x1拉架）、罗纹（2x2拉架）、罗纹（拉架）、盖丝、健康布（三明治网眼布）、提花、抽针（挑孔）、打鸡（打鸡布）、双层、抓绒（卫衣布）、毛巾布、空气层（三明治）、空气绒、阶梯（楼梯布）、肌理（纹理布）；\n\n### 工艺production_process\n抓毛、碱缩、丝光、食毛、烧毛、砂洗、磨毛、刷毛；\n\n### 系列series\n天丝羊毛、天丝麻、羊毛、羊绒、慕斯绒、麻、棉麻、新麻、棉涤、涤棉、ACR/RAC、RC、TC、混纺、纯纺、棉捻、棉莫、棉莱、棉混纺、桑蚕丝、棉天丝、莫代尔；\n\n## 主观维度\n功能fun：保暖、凉感、环保、抗菌、抗静电、美颜；\n廓形silhouette：垂坠、挺括、塑形；\n手感touch：蓬松、干爽、丝滑、爽滑、Q弹；\n品类/用途dressing_occasion：打底、时尚女装、卫衣、T恤、保暖内衣、家居服、裤料、运动内衣、瑜伽服、连衣裙、小件、无尺码自由裁、传统内衣、骑行、运动、轻运动、运动外套、套装、内衣、半裙、中间层、外穿层；\n适用人群applicable_crowd：女款、男款、通用、童装；\n风格style：休闲、打底、百搭、淑女、运动、潮牌、时尚、商务、正装；\n\n## 2. Value Normalization (必须严格执行的俗称映射转换)\n当用户输入以下左侧词汇时，必须转换为右侧的知识库标准术语：\n- **【成分 elem】**: RC/粘胶纤维/粘纤/人造棉 -> 人棉；棉花 -> 棉；真丝 -> 桑蚕丝；麻 -> 亚麻；羊毛 -> 绵羊毛；莱卡 -> 氨纶；人造羊毛/ACR -> 腈纶；天丝 -> 莱赛尔；涤纶 -> 聚酯纤维；尼龙 -> 聚酰胺纤维。\n- **【布种 fabric_structure_two】**: 平针织 -> 平纹；菠萝/波罗 -> 珠地；坑条布/1x1拉架/2x2拉架/拉架/11 -> 罗纹；三明治/空气层 -> 健康布 (除非特指空气层)；挑孔 -> 抽针；打鸡布 -> 打鸡；卫衣布 -> 抓绒 (作为布种时)；楼梯布 -> 阶梯；纹理布 -> 肌理。\n- **【工艺 production_process】**: 抓绒 -> 抓毛 (作为工艺时)；磨毛/刷毛/摇粒/食毛/烧毛/砂洗/丝光/烫光/碱缩 -> 保持原词。\n\n# 业务知识库\n雪花/雪花棉/雪花纱：纱支或品名中含有雪花的产品，分name和inelem 2组查询；\nA是单面抓绒，D是双面抓绒；\n{{ $('获取业务知识').item.json.prompt }}\n\n# 分组维度\n{{ $('变量整合').item.json.info }}\n\n## 4. Logical Syntax (语法规范)\n- **区间筛选**: 使用连字符或比较符。例 weight: \"200-300\", price: \"<50\"\n- **成分逻辑(elem)**: \n  - 精确匹配: \"棉=100%\"\n  - 比例大于: \"棉>50%\"\n  - 同时包含(AND): \"棉+氨纶\"\n  - 选择包含(OR): \"棉/天丝\"\n  - 复杂组合: \"棉>30% + 聚酯纤维<60% + 氨纶\"\n- **多值筛选**: 使用数组。例 code_start: [6, 9]\n\n\n\n# Execution Rules (核心工作流与要求)\n**要求1：动态分组查询策略（严格区分查询场景）**\n必须根据用户的提问意图，选择以下策略之一执行：\n\n- **款号场景：查询款号维度**\n  - **策略**：按款号维度，将用户提供的所有款号放入**同一个分组（单一 tool_call 对象）**中进行批量查询。\n  - **示例**：用户查“6327和6228A”，输出1个分组，包含 `款号:[\"6327\", \"6228A\"]`。\n\n- **客观场景：查询客观维度**\n  - **策略**：按需将1个或多个维度放入**分组（tool_call 对象）**中进行批量查询，分组数量按需划分。\n  - **示例**：用户查“20-35元的罗纹”，输出1个分组，包含 `价格`和`布种`查询。\n  - **示例**：用户查“20-35元的罗纹或拉架”，输出2个分组，每组包含 `价格`和`布种`查询。\n\n- **主观场景：查询主观维度** \n  - **策略**：直接对应用户需求字面的面料知识库中的主观维度，并从上面的“分组维度”中选择枚举值，一起放入**分组（tool_call 对象）**中进行批量查询，需要3-6个分组，每个分组结构为**匹配的主观维度字段+1个分组枚举**。\n  - **示例**：\n  问题：\"适合连衣裙的面料\"（提及了用途）；\n  分组策略：分组1（dressing_occasion用途=连衣裙+1个功能）、分组2（dressing_occasion用途=连衣裙+1个手感）、分组3（dressing_occasion用途=连衣裙+1个廓形）、...；\n  - **注意**：问题提及的主观维度必须要有（如这里的用途），分组枚举每组只能选择1个。\n\n\n**要求2：用户友好的分组命名规范 (Title Naming)**\n禁止使用AI视角的生硬词汇（绝对不要用“直接匹配”、“成分推理”、“其它维度”等词）！\n分组名称 `title` 必须围绕**具体的筛选重点或业务价值**取名（限7字内）。\n例如：\n- 错误示范 -> 正确示范\n- \"手感直选\" -> \"Q弹手感款\"\n- \"推理1\" -> \"高氨纶款\" / \"高弹氨纶款\"\n\n**要求3：用户俗语清洗**\n必须在后台默默完成用户的俗语到标准词的映射，如用户说“全麻”，转换为 `elem: \"亚麻=100%\"`。\n\n**要求4：展示给买家的选款思路 (think字段)**\n- 字数要求：50字左右，最长不超过100字。\n- 内容要求：向用户解释你的分组逻辑。如果是查款，直接说明已汇总查询；如果是模糊需求，**必须包含AI推理出的具体量化指标或标准词**，分3-5组。\n- 模糊需求话术示例：“已为您推荐3组匹配需求的产品：XX组（）、XX组（）、XX组（）”\n\n**要求5：输出格式规范**\n- 必须且只能输出严格的 JSON 格式。\n- 当用户无特定排序、字段选取或数量限制要求时，`sort` 和 `fields` 字段留空，`limit` 和 `sort_by` 不要传。\n- 动态的查询条件（如 `weight`, `elem`, `touch` 等）直接作为平级键值对放在各个分组对象中。\n\n# Output Format JSON \n请严格按照以下结构输出：\n{\n\"think\":\"<向买家解释的分组理由，描述要友好易懂，包含量化的中文指标，不能输出英文字段名，50-100字>\",\n\"tool_call\":[\n    {\n      \"title\": \"<围绕筛选重点命名，禁绝AI用词，7字内>\",\n      \"reson\": \"从用户需求出发，解释选择的理由，15-50字内，口语化，导购的描述风格\",\n      \"sort\": \"\",\n      \"fields\": [],\n      \"<查询字段1>\": \"<对应的值>\"\n      ...\n    }\n  ]\n}",
+          "enableStreaming": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2848,
+        768
+      ],
+      "id": "cc489cd5-3471-4475-9686-0efcdec43ae8",
+      "name": "推理模式"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://139.196.198.169:8012/api/product_search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool_call",
+              "value": "={{ $json.tool_call }}"
+            },
+            {
+              "name": "typeNotes",
+              "value": "={{ $('Edit Fields').item.json.typeNotes }}"
+            },
+            {
+              "name": "codeStart",
+              "value": "={{ $('Edit Fields').item.json.codeStart }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3488,
+        608
+      ],
+      "id": "54764a0f-07a4-4937-8d78-e300e04cd3f5",
+      "name": "产品检索"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3296,
+        608
+      ],
+      "id": "2f0923a9-d598-4bc5-bde4-0a06a7763ff2",
+      "name": "整合输出"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "# Role\n你是一个专业的面料知识库AI查询助手，核心任务是理解用户的自然语言需求，将其精准转换为结构化的查询参数。\n\n# Data & Knowledge Base (面料知识库)\n\n## 客观维度\n品名 name、款号 code（6327 或 6228A，数字 / 数字 + 字母格式）、克重 weight、幅宽 width、含税米价 taxmprice、大货价 price、含税公斤价 taxkgprice、净布价 kgprice、散剪价 fewprice、布种 className、成分 elem、纱支 inelem、产品线 series、空差 emptyqty、纸筒 papertubeqty、运营分类 type_name、季节 season、库存 stock_qty、色卡 image_urls、颜色 color_name、销售话术 fabe、抗起毛起球 unpilling、搅浮色牢度 spring_color_fastness、耐光色牢度 light_fastness、干摩擦牢度 dry_rubbing_fastness、近一年销量 (条) sale_num_year、检测报告 report_urls、上架日期 release_date。\n\n### 可订等级 customizable_grade\n可订一等品\n\n### 成分elem\n人棉（RC）、人棉（粘胶纤维）、棉（棉花）、桑蚕丝（真丝）、亚麻（麻）、绵羊毛（羊毛）、氨纶（莱卡）、腈纶（人造羊毛）、腈纶（ACR）、莱赛尔（天丝）、聚酯纤维（涤纶）、聚酰胺纤维（尼龙）、莫代尔、粘纤（人造棉）、强捻、高捻、S捻、Z捻、国产莱赛尔、兰精天丝、锦纶；\n\n### 布种fabric_structure_two\n平纹（平针织）、珠地（菠罗布）、罗纹（坑条布）、罗纹（1x1拉架）、罗纹（2x2拉架）、罗纹（拉架）、盖丝、健康布（三明治网眼布）、提花、抽针（挑孔）、打鸡（打鸡布）、双层、抓绒（卫衣布）、毛巾布、空气层（三明治）、空气绒、阶梯（楼梯布）、肌理（纹理布）；\n\n### 工艺production_process\n抓毛、碱缩、丝光、食毛、烧毛、砂洗、磨毛、刷毛；\n\n### 系列series\n天丝羊毛、天丝麻、羊毛、羊绒、慕斯绒、麻、棉麻、新麻、棉涤、涤棉、ACR/RAC、RC、TC、混纺、纯纺、棉捻、棉莫、棉莱、棉混纺、桑蚕丝、棉天丝、莫代尔；\n\n## 主观维度\n功能fun：保暖、凉感、环保、抗菌、抗静电、美颜；\n廓形silhouette：垂坠、挺括、塑形；\n手感touch：蓬松、干爽/丝滑/爽滑、Q弹；\n品类/用途dressing_occasion：打底、时尚女装、卫衣、T恤、保暖内衣、家居服、裤料、运动内衣、瑜伽服、连衣裙、小件、无尺码自由裁、传统内衣、骑行、运动、轻运动、运动外套、套装、内衣、半裙、中间层、外穿层；\n适用人群applicable_crowd：女款、男款、通用、童装；\n风格style：休闲、打底、百搭、淑女、运动、潮牌、时尚、商务、正装；\n\n## 2. Value Normalization (必须严格执行的俗称映射转换)\n当用户输入以下左侧词汇时，必须转换为右侧的知识库标准术语：\n- **【成分 elem】**: RC/粘胶纤维/粘纤/人造棉 -> 人棉；棉花 -> 棉；真丝 -> 桑蚕丝；麻 -> 亚麻；羊毛 -> 绵羊毛；莱卡 -> 氨纶；人造羊毛/ACR -> 腈纶；天丝 -> 莱赛尔；涤纶 -> 聚酯纤维；尼龙 -> 聚酰胺纤维。\n- **【布种 fabric_structure_two】**: 平针织 -> 平纹；菠萝/波罗 -> 珠地；坑条布/1x1拉架/2x2拉架/拉架/11 -> 罗纹；三明治/空气层 -> 健康布 (除非特指空气层)；挑孔 -> 抽针；打鸡布 -> 打鸡；卫衣布 -> 抓绒 (作为布种时)；楼梯布 -> 阶梯；纹理布 -> 肌理。\n- **【工艺 production_process】**: 抓绒 -> 抓毛 (作为工艺时)；磨毛/刷毛/摇粒/食毛/烧毛/砂洗/丝光/烫光/碱缩 -> 保持原词。\n\n# 业务知识库\n雪花/雪花棉/雪花纱：纱支或品名中含有雪花的产品，分name和inelem 2组查询；\nA是单面抓绒，D是双面抓绒；\n{{ $('获取业务知识').item.json.prompt }}\n\n\n\n\n# Execution Rules (核心工作流与要求)\n**要求1：动态分组查询策略（严格区分查询场景）**\n必须根据用户的提问意图，选择以下策略之一执行：\n\n- **款号场景：查询款号维度**\n  - **策略**：按款号维度，将用户提供的所有款号放入**同一个分组中进行批量查询。\n  - **示例**：用户查“6327和6228A”，输出1个分组，包含 `款号:[\"6327\", \"6228A\"]`。\n\n- **客观场景：查询客观维度**\n  - **策略**：按需将1个或多个维度放入**分组**中进行批量查询，分组数量按需划分，至少分6个组。\n  - **示例**：用户查“20-35元的罗纹”，输出1个分组，包含 `价格`和`布种`查询。\n  - **示例**：用户查“20-35元的罗纹或拉架”，输出2个分组，每组包含 `价格`和`布种`查询。\n\n- **主观场景：查询主观维度** \n  - **策略**：按（主观匹配维度 + 功能/廓形/手感/风格）的结构中进行分组，需要按以下示例进行分组。\n  - **示例**：\n  问题：\"适合连衣裙的面料\"（提及了用途）；\n  分组：用途（连衣裙）+功能（抗菌/环保）;\n  分组：用途（连衣裙）+功能（凉感）;\n  分组：用途（连衣裙）+廓形(垂坠/挺括/塑形);\n  分组：用途（连衣裙）+手感(干爽/爽滑/丝滑/Q弹);\n  分组：用途（连衣裙）+风格（打底百搭/休闲）;\n\n注意：这几个枚举值要一起传入,不能遗漏，功能（抗菌/环保）、廓形(垂坠/挺括/塑形)、手感(干爽/爽滑/丝滑/Q弹)、风格（打底百搭/休闲）。\n\n**要求2：用户俗语清洗**\n必须在后台默默完成用户的俗语到标准词的映射，如用户说“全麻”，转换为 `elem: \"亚麻=100%\"`。\n\n**要求3：展示给买家的选款思路 (think字段)**\n- 字数要求：30字左右，最长不超过70字,包含量化中文指标，不能输出英文字段。\n- 内容要求：向用户解释你的分组逻辑。如果是查款场景，直接说明已汇总查询；如果是主主观场景，**必须包含AI推理出的具体量化指标或标准词**。\n\n\n# Output Format\n请严格按照以下结构输出，不输出其它内容：\n选款思路具体内容（不需要标题）",
+          "enableStreaming": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2848,
+        512
+      ],
+      "id": "639c92ad-caec-4a4b-be5a-4d4846fa10c1",
+      "name": "体验感-推理"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "# 任务\n根据面料知识库，提炼出款号和维度。\n\n# Data & Knowledge Base (面料知识库)\n\n## 客观维度\n品名 name、款号 code（6327 或 6228A，数字 / 数字 + 字母格式）、克重 weight、幅宽 width、含税米价 taxmprice、大货价 price、含税公斤价 taxkgprice、净布价 kgprice、散剪价 fewprice、布种 fabric_erp、成分 elem、纱支 inelem、产品线 series、空差 emptyqty、纸筒 papertubeqty、运营分类 type_name、库存 stock_qty、色卡 image_urls、颜色 color_name、销售话术 fabe、近一年销量 (条) sale_num_year、检测报告 report_urls、上架日期 release_date。\n\n### 季节 season_marking\n春秋、秋冬、夏；\n\n### 成分elem\n人棉（RC）、人棉（粘胶纤维）、棉（棉花）、桑蚕丝（真丝）、亚麻（麻）、绵羊毛（羊毛）、氨纶（莱卡）、腈纶（人造羊毛）、腈纶（ACR）、莱赛尔（天丝）、聚酯纤维（涤纶）、聚酰胺纤维（尼龙）、莫代尔、粘纤（人造棉）、强捻、高捻、S捻、Z捻、国产莱赛尔、兰精天丝、锦纶；\n\n### 布种fabric_erp (若有1x1,优先匹配1X1罗纹，而不是罗纹)\n平纹（平针织）、单珠地（菠罗布）、珠地（菠罗布）、1X1罗纹、2X2罗纹、罗纹（坑条布）、盖丝、健康布（三明治网眼布）、提花、抽针（挑孔）、打鸡（打鸡布）、双层、抓绒（卫衣布）、毛巾布、空气层（三明治）、空气绒、阶梯（楼梯布）、肌理（纹理布）；\n\n### 工艺production_process\n抓毛、碱缩、丝光、食毛、烧毛、砂洗、磨毛、刷毛；\n\n### 系列series\n天丝羊毛、天丝麻、羊毛、羊绒、慕斯绒、麻、棉麻、新麻、棉涤、涤棉、ACR/RAC、RC、TC、混纺、纯纺、棉捻、棉莫、棉莱、棉混纺、桑蚕丝、棉天丝、莫代尔；\n\n## 主观维度\n功能fun：保暖、凉感、环保、抗菌、抗静电、美颜；\n廓形silhouette：垂坠、挺括、塑形；\n手感touch：蓬松、干爽/丝滑/爽滑、Q弹；\n品类/用途dressing_occasion：打底、时尚女装、卫衣、T恤、保暖内衣、家居服、裤料、运动内衣、瑜伽服、连衣裙、小件、无尺码自由裁、传统内衣、骑行、运动、轻运动、运动外套、套装、内衣、半裙、中间层、外穿层；\n适用人群applicable_crowd：女款、男款、通用、童装；\n风格style：休闲、打底、百搭、淑女、运动、潮牌、时尚、商务、正装；\n可订等级 customizable_grade:可订一等品;\n抗起毛起球 unpilling:2-3、3;\n搅浮色牢度 spring_color_fastness:1-2、2-3、3、3-4;\n耐光色牢度 light_fastness:浅色≥3、深色≥3-4;\n干摩擦牢度 dry_rubbing_fastness:3;\n\n## 款号 code（6327 或 6228A，数字 / 数字 + 字母格式）\n\n# 约束\n1、没有提及维度时，params中默认使用纱支 inelem。如(\"params\":\"inelem\",)；\n2、提及平替/实惠/便宜时，params中默认使用 taxmprice。如(\"params\":\"taxmprice\",)；\n\n# Output Format JSON \n请严格按照以下结构输出，不输出其它内容：\n{\n\"params\":\"<提及的面料维度词，1个>\",\n\"tool_call\":[\n    {\n      \"code\": \"<对应的款号>\"\n      ...\n    }\n  ]\n}\n\n\n# 案例\n问题:找跟 6327 差不多的，成分要一样。\n输出：\n{\n\"params\":\"elem\",\n\"tool_call\":[\n    {\n      \"code\": \"6327\"\n      ...\n    }\n  ]\n}\n\n问题:找跟 6327 差不多的。\n输出：\n{\n\"params\":\"inelem\",\n\"tool_call\":[\n    {\n      \"code\": \"6327\"\n      ...\n    }\n  ]\n}\n\n问题:找跟 6327 平替。\n输出：\n{\n\"params\":\"taxmprice\",\n\"tool_call\":[\n    {\n      \"code\": \"6327\"\n      ...\n    }\n  ]\n}\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2640,
+        1952
+      ],
+      "id": "ea6e0ecb-c9a6-4b40-b126-ba580e0c67e0",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://139.196.198.169:8012/api/product_search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool_call",
+              "value": "={{ $json.tool_call }}"
+            },
+            {
+              "name": "typeNotes",
+              "value": "={{ $('Edit Fields').item.json.typeNotes }}"
+            },
+            {
+              "name": "codeStart",
+              "value": "={{ $('Edit Fields').item.json.codeStart }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3120,
+        1952
+      ],
+      "id": "32a6ae83-4483-4dbb-adae-a62c7fd85bc4",
+      "name": "产品检索1"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2944,
+        1952
+      ],
+      "id": "48c658de-fa0b-4ab0-a5e4-5371cc7ad653",
+      "name": "整合输出1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=# 任务\n你是业务知识问答助手，从以下业务知识中寻找回答。\n\n# 流程\n找到答案，结合答案进行回答。\n找不到答案，输出\"暂无相关知识，将进行深度检索\"。\n\n# 业务知识\n{{ $('变量整合3').item.json.prompt }}\n\n\n",
+          "enableStreaming": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2672,
+        1056
+      ],
+      "id": "a6f83e02-34e6-4afc-b50a-83f9f992fbdc",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3f502085-328e-45cb-8e16-53a6694dfd9c",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "暂无相关知识，将进行深度检索",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2976,
+        1056
+      ],
+      "id": "7ca808cd-d450-4306-add7-c4d7f4bf3021",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "# 相似查询",
+        "height": 304,
+        "width": 1844
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2592,
+        1872
+      ],
+      "id": "57680d4a-0460-472e-a751-4e829c7243d4",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "# 提炼总结",
+        "height": 304,
+        "width": 1780
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2592,
+        2256
+      ],
+      "id": "d0931ae6-5e83-4051-8618-fe3b956dbcae",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# Role\n你是一个专业的面料知识库+业务知识库的AI查询助手，核心任务是理解用户的自然语言需求，将其精准转换为结构化的查询参数。\n\n# Data & Knowledge Base (面料知识库)\n\n## 客观维度\n品名 name、款号 code（6327 或 6228A，数字 / 数字 + 字母格式）、克重 weight、幅宽 width、含税米价 taxmprice、大货价 price、含税公斤价 taxkgprice、净布价 kgprice、散剪价 fewprice、布种 fabric_erp、成分 elem、纱支 inelem、产品线 series、空差 emptyqty、纸筒 papertubeqty、运营分类 type_name、季节 season、库存 stock_qty、色卡 image_urls、颜色 color_name、销售话术 fabe、近一年销量 (条) sale_num_year、检测报告 report_urls、上架日期 release_date。\n\n### 成分elem\n人棉（RC）、人棉（粘胶纤维）、棉（棉花）、桑蚕丝（真丝）、亚麻（麻）、绵羊毛（羊毛）、氨纶（莱卡）、腈纶（人造羊毛）、腈纶（ACR）、莱赛尔（天丝）、聚酯纤维（涤纶）、聚酰胺纤维（尼龙）、莫代尔、粘纤（人造棉）、强捻、高捻、S捻、Z捻、国产莱赛尔、兰精天丝、锦纶；\n\n### 布种fabric_erp (若有1x1,优先匹配1X1罗纹，而不是罗纹)\n平纹（平针织）、单珠地（菠罗布）、珠地（菠罗布）、1X1罗纹、2X2罗纹、罗纹（坑条布）、盖丝、健康布（三明治网眼布）、提花、抽针（挑孔）、打鸡（打鸡布）、双层、抓绒（卫衣布）、毛巾布、空气层（三明治）、空气绒、阶梯（楼梯布）、肌理（纹理布）；\n\n### 工艺production_process\n抓毛、碱缩、丝光、食毛、烧毛、砂洗、磨毛、刷毛；\n\n### 系列series\n天丝羊毛、天丝麻、羊毛、羊绒、慕斯绒、麻、棉麻、新麻、棉涤、涤棉、ACR/RAC、RC、TC、混纺、纯纺、棉捻、棉莫、棉莱、棉混纺、桑蚕丝、棉天丝、莫代尔；\n\n## 主观维度\n功能fun：保暖、凉感、环保、抗菌、抗静电、美颜；\n廓形silhouette：垂坠、挺括、塑形；\n手感touch：蓬松、干爽/丝滑/爽滑、Q弹；\n品类/用途dressing_occasion：打底、时尚女装、卫衣、T恤、保暖内衣、家居服、裤料、运动内衣、瑜伽服、连衣裙、小件、无尺码自由裁、传统内衣、骑行、运动、轻运动、运动外套、套装、内衣、半裙、中间层、外穿层；\n适用人群applicable_crowd：女款、男款、通用、童装；\n风格style：休闲、打底、百搭、淑女、运动、潮牌、时尚、商务、正装；\n可订等级 customizable_grade:可订一等品;\n抗起毛起球 unpilling:2-3、3;\n搅浮色牢度 spring_color_fastness:1-2、2-3、3、3-4;\n耐光色牢度 light_fastness:浅色≥3、深色≥3-4;\n干摩擦牢度 dry_rubbing_fastness:3;\n\n## 2. Value Normalization (必须严格执行的俗称映射转换)\n当用户输入以下左侧词汇时，必须转换为右侧的知识库标准术语：\n- **【成分 elem】**: RC/粘胶纤维/粘纤/人造棉 -> 人棉；棉花 -> 棉；真丝 -> 桑蚕丝；麻 -> 亚麻；羊毛 -> 绵羊毛；莱卡 -> 氨纶；人造羊毛/ACR -> 腈纶；天丝 -> 莱赛尔；涤纶 -> 聚酯纤维；尼龙 -> 聚酰胺纤维。\n- **【布种 fabric_erp】**: 平针织 -> 平纹；菠萝/波罗 -> 珠地；坑条布/拉架 -> 罗纹；1x1罗纹 -> 1X1罗纹；2x2罗纹 -> 2X2罗纹；三明治/空气层 -> 健康布 (除非特指空气层)；挑孔 -> 抽针；打鸡布 -> 打鸡；卫衣布 -> 抓绒 (作为布种时)；楼梯布 -> 阶梯；纹理布 -> 肌理。\n- **【工艺 production_process】**: 抓绒 -> 抓毛 (作为工艺时)；磨毛/刷毛/摇粒/食毛/烧毛/砂洗/丝光/烫光/碱缩 -> 保持原词。\n\n## 3. Logical Syntax (语法规范)\n- **区间筛选**: 使用连字符或比较符。例 weight: \"200-300\",taxmprice:\"20-35\"\n- **成分逻辑(elem)**: \n  - 精确匹配: \"棉=100%\"\n  - 比例大于: \"棉>50%\"\n  - 同时包含(AND): \"棉+氨纶\"\n  - 选择包含(OR): \"棉/天丝\"\n  - 复杂组合: \"棉>30% + 聚酯纤维<60% + 氨纶\"\n- **多值筛选**: 使用数组。例 code_start: [6,9]\n\n## 4.业务知识库\n雪花/雪花棉/雪花纱：纱支或品名中含有雪花的产品，分name和inelem 2组查询；\nA是单面抓绒，D是双面抓绒；\n抓绒必须筛选工艺为“抓毛”的产品；\n{{ $('变量整合3').item.json.prompt }}\n\n\n# Execution Rules (核心工作流与要求)\n**要求1：动态分组查询策略（严格区分查询场景）**\n必须根据用户的提问意图，选择以下策略之一执行：\n\n- **款号场景：查询款号维度**\n  - **策略**：按款号维度，将用户提供的所有款号放入**同一个分组（单一 tool_call 对象）**中进行批量查询。\n  - **示例**：用户查“6327和6228A”，输出1个分组，包含 `款号:[\"6327\", \"6228A\"]`。\n\n- **客观场景：查询客观维度**\n  - **策略**：按需将1个或多个维度放入**分组（tool_call 对象）**中进行批量查询，分组数量按需划分，至少分6个组。\n  - **示例**：用户查“20-35元的1x1罗纹”，输出1个分组，包含 `含税米价`和`fabric_erp（1X1罗纹）`查询。\n\n- **主观场景：查询主观维度** \n  - **策略**：按（主观匹配维度 + 功能/廓形/手感/风格）的结构中进行分组，需要按以下示例进行分组。\n  - **示例**：\n  问题：\"适合连衣裙的面料\"（提及了用途）；\n  分组：用途（连衣裙）+功能（抗菌/环保）;\n  分组：用途（连衣裙）+功能（凉感）;\n  分组：用途（连衣裙）+廓形(垂坠/挺括/塑形);\n  分组：用途（连衣裙）+手感(干爽/爽滑/丝滑/Q弹);\n  分组：用途（连衣裙）+风格（打底百搭/休闲）;\n\n注意：这几个枚举值要一起传入,不能遗漏，功能（抗菌/环保）、廓形(垂坠/挺括/塑形)、手感(干爽/爽滑/丝滑/Q弹)、风格（打底百搭/休闲）。\n\n**要求2：用户俗语清洗**\n必须在后台默默完成用户的俗语到标准词的映射，如用户说“全麻”，转换为 `elem: \"亚麻=100%\"`，“棉和氨纶6%的”转化为“棉+氨纶>6%”，“棉80%和氨纶6%的”转化为“棉>80%+氨纶>6%”，“棉或氨纶的”转化为“棉/氨纶”。\n\n**要求4：输出格式规范**\n- 必须且只能输出严格的 JSON 格式。\n- fields：按以下示例固定。\n\n\n# Output Format JSON \n请严格按照以下结构输出，不输出其它内容：\n{\n\"tool_call\":[\n    {\n      \"fields\": [\"name\",\"code\",\"weight\",\"width\",\"taxmprice\",\"price\",\"taxkgprice\",\"kgprice\",\"fewprice\",\"fabric_erp\",\"elem\",\"inelem\",\"series\",\"emptyqty\",\"papertubeqty\",\"type_name\",\"season\",\"stock_qty\",\"fabe\",\"sale_num_year\",\"release_date\",\"introduce\"],\n      \"<查询英文字段>\": \"<对应的1个或多个值，如'垂坠/挺括/塑形'>\"\n      ...\n    }\n  ]\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2672,
+        2352
+      ],
+      "id": "4658e1b3-946e-4eeb-91b7-34ff264b37b1",
+      "name": "Basic LLM Chain3"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3008,
+        2352
+      ],
+      "id": "3548a715-ed35-42c8-aca8-f9d3151bff0f",
+      "name": "整合输出2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://139.196.198.169:8012/api/product_search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool_call",
+              "value": "={{ $json.tool_call }}"
+            },
+            {
+              "name": "typeNotes",
+              "value": "={{ $('Edit Fields').item.json.typeNotes }}"
+            },
+            {
+              "name": "codeStart",
+              "value": "={{ $('Edit Fields').item.json.codeStart }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3184,
+        2352
+      ],
+      "id": "8a531abc-6325-4c64-b2f0-2c97ce5148e5",
+      "name": "产品检索3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2892b0bd-046e-4e63-bed8-8127d9d78fb5",
+              "name": "value",
+              "value": "={{$json.list.map(item => JSON.stringify(item)).join(\" \")}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3408,
+        2352
+      ],
+      "id": "10e7b954-d5e4-4420-b3df-2680a13d46cb",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "url": "http://139.196.198.169:8012/api/agent_prompt/sale",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool_call",
+              "value": "={{ $json.tool_call }}"
+            },
+            {
+              "name": "typeNotes",
+              "value": "={{ $json.typeNotes }}"
+            },
+            {
+              "name": "codeStart",
+              "value": "={{ $json.codeStart }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        928,
+        272
+      ],
+      "id": "c929c946-b8e8-4908-a0c9-029f8e794050",
+      "name": "获取业务知识3"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"prompt\": \"{{ $json.prompt }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        272
+      ],
+      "id": "b3a27883-d193-44dc-8bb5-1a6af66e50df",
+      "name": "变量整合3"
+    },
+    {
+      "parameters": {
+        "content": "# 违规查询",
+        "height": 304,
+        "width": 1780
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2592,
+        2656
+      ],
+      "id": "7f9c244f-6ff5-4e22-9e7d-1fde08d91380",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# 用户问题\n{{ $('Edit Fields').item.json.chatInput }}\n\n# 业务知识\n{{ $('变量整合3').item.json.prompt }}",
+        "options": {
+          "systemMessage": "提示用户他的“查询不符合已有的业务知识，请联系管理员确认。”\n\n# 输出格式（MD，短段落，空行）\nTIP：<提示>\n详细：<简单具体不符合的业务知识>\n\n\n",
+          "enableStreaming": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2672,
+        2768
+      ],
+      "id": "f014eefb-b12c-4de3-8380-ac24134b38b7",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取 HTTP Request 节点的所有 3 个 items\nconst httpItems = $(\"产品检索4\").all();\n\n// 构造新的 JSON 结构\nreturn {\n  element:\"商品列表\",\n  list: httpItems.map(item => item.json) || []\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4192,
+        1968
+      ],
+      "id": "78e5bf23-32f5-4222-a09d-5d0365b11700",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2892b0bd-046e-4e63-bed8-8127d9d78fb5",
+              "name": "value",
+              "value": "={{$json.list.map(item => JSON.stringify(item)).join(\" \")}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3312,
+        1952
+      ],
+      "id": "6e961656-6aaf-4438-b78c-65b4c7791fab",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://139.196.198.169:8012/api/product_search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool_call",
+              "value": "={{ $json.tool_call }}"
+            },
+            {
+              "name": "typeNotes",
+              "value": "={{ $('Edit Fields').item.json.typeNotes }}"
+            },
+            {
+              "name": "codeStart",
+              "value": "={{ $('Edit Fields').item.json.codeStart}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3984,
+        1968
+      ],
+      "id": "671cd000-2c4e-47ae-993f-044daf8ccca2",
+      "name": "产品检索4"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3808,
+        1968
+      ],
+      "id": "88053be5-c732-4b9c-8386-3cf334d3cee0",
+      "name": "整合输出3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# 用户需求\n{{ $('Edit Fields').item.json.chatInput }}\n\n# 产品数据\n{{ $json.value }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# 根据产品数据整理出所需格式。\n\n\n# 维度格式约束\ninelem：不许要格式转化，用原本的值；\nelem格式转化：\"37.6%粘纤 28.3%棉 28.3%腈纶 5.8%氨纶\"=>\"粘纤=37.6% + 棉=28.3% + 腈纶=28.3% + 氨纶=5.8%\";\n区间格式转化: 使用连字符或比较符。例 weight: \"200-300\",taxmprice:\"20-35\"、\"<30\"、\">50\";\n排序：sort_order，默认asc，平替用asc；\n\n# 示例\n找平替 => taxmprice、\"<\" + 具体的产品维度的数值;\n\n# 输出格式（只输出补充以下的\"具体的产品维度的值\"）\n{\n\"think\":\"按相似度推荐\",\n\"tool_call\":[\n    {\n      \"title\": \"-\",\n      \"fields\": [],\n      \"inelem\": \"<产品inelem>\",\n      \"sort_by\": \"{{ $('整合输出1').item.json.params }}\",\n      \"sort_order\": \"<排序类型，asc/desc>\"\n      \"{{ $('整合输出1').item.json.params }}\": \"<具体的产品维度的筛选条件+数值,如(<30)\",\n    }\n  ]\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        3520,
+        1968
+      ],
+      "id": "b83b87d8-d3f7-4ffa-bc57-ac5543551116",
+      "name": "相似款-参数结构化LLM"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# 用户问题\n{{ $('Edit Fields').item.json.chatInput }}\n\n# 产品信息\n{{ $json.value }}",
+        "options": {
+          "systemMessage": "=# 你是内容提炼助手，根据用户的需求，进行产品的内容提炼。\n\n# 用户需求理解\n1、推/推下，即推荐\n2、若要给XX角色推荐商品，则需要告诉用户，以下角色关注点有哪些，然后再针对这些点进行提炼解答。\n\n# 角色关注点\n企业老板（侧重市场表现/风险低）\n服装设计师（侧重美学/成品表现）\n二批（侧重质量稳定/货源足）\n\n# 维度关注点\n卖点 => 更关注工艺\n\n\n# 约束\n不能告诉用户年销售量数据，销量用\"*\"代替。\n不能告诉用户库存数据，只告诉用户是否有库存。\n\n# 输出格式\n- 所有输出使用 Markdown。\n- 关键词加粗/下划线/斜体。\n- 排版美观、使用短段落方式输出；\n- 段落之间需要空行；\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3616,
+        2352
+      ],
+      "id": "4a2bb649-263c-4914-b2bd-7231949d519b",
+      "name": "提炼总结Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "Qwen3-Next-80B-A3B-Instruct",
+          "mode": "list",
+          "cachedResultName": "Qwen3-Next-80B-A3B-Instruct"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3328,
+        848
+      ],
+      "id": "7aba5073-81cc-433e-aefb-4ef6bc395ae9",
+      "name": "AI模型1",
+      "credentials": {
+        "openAiApi": {
+          "id": "WEbUuR6JjawNEmBB",
+          "name": "OpenAi amoark"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI模型": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "推理模式",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "意图识别-LLM",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain2",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "体验感-推理",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Retrieval QA Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain3",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "提炼总结Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "相似款-参数结构化LLM",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "精准模式",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "获取业务知识3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "搜索模式",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent3": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "意图识别-LLM": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "Retrieval QA Chain",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings (Qwen)1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store1": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Store Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieval QA Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "精准模式",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "AI Agent3",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "推理模式",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "搜索模式": {
+      "main": [
+        [
+          {
+            "node": "精准模式",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "体验感-推理",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "推理模式",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "精准模式": {
+      "main": [
+        [
+          {
+            "node": "整合输出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "推理模式": {
+      "main": [
+        [
+          {
+            "node": "整合输出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "产品检索": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整合输出": {
+      "main": [
+        [
+          {
+            "node": "产品检索",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "体验感-推理": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整合输出1": {
+      "main": [
+        [
+          {
+            "node": "产品检索1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "整合输出1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Retrieval QA Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain3": {
+      "main": [
+        [
+          {
+            "node": "整合输出2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整合输出2": {
+      "main": [
+        [
+          {
+            "node": "产品检索3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "产品检索3": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "提炼总结Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取业务知识3": {
+      "main": [
+        [
+          {
+            "node": "变量整合3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "变量整合3": {
+      "main": [
+        [
+          {
+            "node": "意图识别-LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "产品检索1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "相似款-参数结构化LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整合输出3": {
+      "main": [
+        [
+          {
+            "node": "产品检索4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "产品检索4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "相似款-参数结构化LLM": {
+      "main": [
+        [
+          {
+            "node": "整合输出3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI模型1": {
+      "ai_languageModel": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "1a069a7b-8fae-422f-89da-8abb389b1eab",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1884e036347c4c64c2b3196af1275e0e03209b5e2609928fc1555b74f2e17c25"
+  },
+  "id": "X8LZspL6wykNEtJA",
+  "tags": []
+}
