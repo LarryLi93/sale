@@ -1130,13 +1130,15 @@ export default function App() {
   
   // 必须先定义 sessionId，后面的 useEffect 才能引用
   const [sessionId, setSessionId] = useState(() => {
-    // 初始化时先尝试从 cookie 获取
-    const cookieUserId = getUserIdFromCookie();
-    if (cookieUserId) {
-      return cookieUserId;
+    // 优先从 cookie 获取已有的 session_id
+    const cookieSessionId = getCookie('session_id');
+    if (cookieSessionId) {
+      return cookieSessionId;
     }
-    // 如果没有 cookie，生成临时 sessionId
-    return generateSessionId();
+    // 如果没有，生成新的唯一 sessionId 并保存到 cookie
+    const newSessionId = generateSessionId();
+    setCookie('session_id', newSessionId, 30);
+    return newSessionId;
   });
   
   // 获取授权 URL
@@ -1221,7 +1223,7 @@ export default function App() {
           // 成功获取到 userid
           const userId = urlUserId;
           setCookie('user_id', userId, 30);
-          setSessionId(userId);
+          // 会话ID保持独立，不使用userId
           console.log('Set user_id from URL:', userId);
           // 清除 URL 参数，避免重复处理
           const newUrl = window.location.pathname;
@@ -1570,8 +1572,10 @@ export default function App() {
   };
 
   const handleRegenerate = async () => {
-    // 生成新的会话ID
-    setSessionId(generateSessionId());
+    // 生成新的会话ID并保存到cookie
+    const newSessionId = generateSessionId();
+    setSessionId(newSessionId);
+    setCookie('session_id', newSessionId, 30);
     // 重新生成最后一条回答
     const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
     if (!lastUserMessage) return;
@@ -1855,7 +1859,10 @@ export default function App() {
   const handleClear = () => {
     setMessages([]);
     localStorage.removeItem('chatMessages');
-    setSessionId(generateSessionId());
+    // 生成新的会话ID并保存到cookie
+    const newSessionId = generateSessionId();
+    setSessionId(newSessionId);
+    setCookie('session_id', newSessionId, 30);
     showToast('对话已清空');
   };
 
@@ -1949,7 +1956,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen flex flex-col" style={{ backgroundColor: 'rgb(242,245,248)' }}>
+    <div className="home-page h-screen flex flex-col" style={{ backgroundColor: 'rgb(242,245,248)' }}>
       {/* 顶部导航 */}
       <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">

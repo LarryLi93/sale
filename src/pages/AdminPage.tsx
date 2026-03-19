@@ -429,7 +429,6 @@ const AdminPage: React.FC = () => {
               <MessageSquare size={16} />
               反馈记录
             </button>
-            {/* 商品管理按钮已隐藏
             <button
               onClick={() => setActiveTab('products')}
               className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
@@ -441,7 +440,6 @@ const AdminPage: React.FC = () => {
               <Package size={16} />
               商品管理
             </button>
-            */}
             <button
               onClick={() => setShowRuleModal(true)}
               className="px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-gray-600 hover:bg-gray-100"

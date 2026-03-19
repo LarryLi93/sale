@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Tag, Ruler, Factory, Sparkles, Palette, FileText, X, ZoomIn, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Package, Tag, Ruler, Factory, Sparkles, Palette, FileText, X, ZoomIn, ZoomOut, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+// 设置 PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 interface Product {
   name: string;
@@ -791,16 +797,18 @@ export default function ProductDetailPage() {
               <ArrowLeft size={20} />
               <span className="text-sm">返回详情</span>
             </button>
-            <span className="text-sm text-gray-900 truncate max-w-[50%] text-center">
+            <span className="text-sm text-gray-900 truncate max-w-[40%] text-center">
               {previewReport.name}
             </span>
             <a
               href={previewReport.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-blue-500 hover:text-blue-600 transition-colors"
+              download
+              className="flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 transition-colors"
             >
-              新窗口打开
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              下载
             </a>
           </div>
 
@@ -822,16 +830,8 @@ export default function ProductDetailPage() {
                   </div>
                 );
               } else if (isPDF) {
-                // PDF 使用 Google Docs 预览或 iframe
-                const pdfUrl = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(previewReport.url)}`;
-                return (
-                  <iframe
-                    src={pdfUrl}
-                    title={previewReport.name}
-                    className="w-full h-full border-0"
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                  />
-                );
+                // PDF 使用 react-pdf 本地预览
+                return <PDFViewer url={previewReport.url} name={previewReport.name} />;
               } else {
                 // 其他文件类型，提供下载提示
                 return (
@@ -856,3 +856,149 @@ export default function ProductDetailPage() {
     </div>
   );
 }
+
+// PDF 预览组件
+const PDFViewer = ({ url, name }: { url: string; name: string }) => {
+  const [numPages, setNumPages] = useState<number>(0);
+  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [scale, setScale] = useState<number>(1.2);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+    setNumPages(numPages);
+    setLoading(false);
+    setPageNumber(1);
+  }
+
+  function onDocumentLoadError(error: Error) {
+    console.error('PDF加载失败:', error);
+    setError('PDF 文件加载失败，请检查文件链接');
+    setLoading(false);
+  }
+
+  const goToPrevPage = () => {
+    setPageNumber((prev) => Math.max(prev - 1, 1));
+  };
+
+  const goToNextPage = () => {
+    setPageNumber((prev) => Math.min(prev + 1, numPages));
+  };
+
+  const zoomIn = () => {
+    setScale((prev) => Math.min(prev + 0.2, 3));
+  };
+
+  const zoomOut = () => {
+    setScale((prev) => Math.max(prev - 0.2, 0.5));
+  };
+
+  const resetZoom = () => {
+    setScale(1.2);
+  };
+
+  return (
+    <div className="w-full h-full flex flex-col bg-gray-100">
+      {/* 工具栏 */}
+      <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={goToPrevPage}
+            disabled={pageNumber <= 1}
+            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft size={20} className="text-gray-700" />
+          </button>
+          <span className="text-sm text-gray-700 min-w-[80px] text-center">
+            {pageNumber} / {numPages}
+          </span>
+          <button
+            onClick={goToNextPage}
+            disabled={pageNumber >= numPages}
+            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight size={20} className="text-gray-700" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={zoomOut}
+            disabled={scale <= 0.5}
+            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ZoomOut size={18} className="text-gray-700" />
+          </button>
+          <span className="text-sm text-gray-700 min-w-[60px] text-center">
+            {Math.round(scale * 100)}%
+          </span>
+          <button
+            onClick={zoomIn}
+            disabled={scale >= 3}
+            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ZoomIn size={18} className="text-gray-700" />
+          </button>
+          <button
+            onClick={resetZoom}
+            className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 transition-colors ml-2"
+          >
+            重置
+          </button>
+        </div>
+      </div>
+
+      {/* PDF 内容区域 */}
+      <div 
+        ref={containerRef}
+        className="flex-1 overflow-auto flex justify-center items-start py-8"
+      >
+        {loading && (
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-gray-500 text-sm mt-3">加载 PDF 中...</p>
+          </div>
+        )}
+        
+        {error && (
+          <div className="flex flex-col items-center justify-center h-full p-8">
+            <FileText size={64} className="text-gray-300 mb-4" />
+            <p className="text-gray-600 text-center mb-4">{error}</p>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              下载文件
+            </a>
+          </div>
+        )}
+
+        <Document
+          file={url}
+          onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={onDocumentLoadError}
+          loading={null}
+          className="shadow-lg"
+        >
+          {!loading && !error && (
+            <Page
+              pageNumber={pageNumber}
+              scale={scale}
+              renderTextLayer={true}
+              renderAnnotationLayer={true}
+              className="bg-white"
+              loading={
+                <div className="w-[600px] h-[800px] bg-white flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              }
+            />
+          )}
+        </Document>
+      </div>
+    </div>
+  );
+};

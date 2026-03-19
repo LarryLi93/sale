@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* 防止移动端页面被拉拽（橡皮筋效果） */
-html, body {
+/* 防止移动端页面被拉拽（橡皮筋效果）- 仅首页使用 */
+.home-page {
   overscroll-behavior: none;
   -webkit-overscroll-behavior: none;
   touch-action: pan-y;
@@ -16,8 +16,8 @@ input, textarea {
   user-select: text;
 }
 
-/* 主应用容器固定，防止整体滚动 */
-#root {
+/* 主应用容器固定，防止整体滚动 - 仅首页使用 */
+.home-page {
   height: 100vh;
   height: 100dvh; /* 动态视口高度，适配移动端 */
   overflow: hidden;
