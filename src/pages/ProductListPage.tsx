@@ -77,7 +77,10 @@ export default function ProductListPage() {
         <Package size={48} className="text-gray-300 mb-4" />
         <p className="text-gray-500 mb-4">列表信息未找到</p>
         <button 
-          onClick={() => navigate('/')}
+          onClick={() => {
+            sessionStorage.setItem('from_detail_page', 'true');
+            navigate('/');
+          }}
           className="px-4 py-2 bg-orange-500 text-white rounded-lg"
         >
           返回首页
@@ -108,7 +111,10 @@ export default function ProductListPage() {
       <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              sessionStorage.setItem('from_detail_page', 'true');
+              navigate(-1);
+            }}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ArrowLeft size={20} className="text-gray-600" />

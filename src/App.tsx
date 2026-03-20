@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Mic, Check, ChevronRight, RefreshCw, Image as ImageIcon, X, ArrowLeft, BookOpen, Package, Trash2, MessageSquare, ChevronDown, ChevronUp, ChevronLeft, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import ProductList, { Product, ProductGroup, ComponentData } from './components/ProductList';
@@ -1103,6 +1103,7 @@ export default function App() {
   const [showPreference, setShowPreference] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const [previewImage, setPreviewImage] = useState<string>('');
   const [imageScale, setImageScale] = useState(1);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
@@ -1129,17 +1130,10 @@ export default function App() {
     return '';
   };
   
-  // 必须先定义 sessionId，后面的 useEffect 才能引用
+  // 初始化 sessionId（使用 cookie 中现有的或空值，后续在 useEffect 中处理）
   const [sessionId, setSessionId] = useState(() => {
-    // 优先从 cookie 获取已有的 session_id
-    const cookieSessionId = getCookie('session_id');
-    if (cookieSessionId) {
-      return cookieSessionId;
-    }
-    // 如果没有，生成新的唯一 sessionId 并保存到 cookie
-    const newSessionId = generateSessionId();
-    setCookie('session_id', newSessionId, 30);
-    return newSessionId;
+    const existingSessionId = getCookie('session_id');
+    return existingSessionId || '';
   });
   
   // 获取授权 URL
@@ -1286,29 +1280,70 @@ export default function App() {
     setTimeout(() => setToast({ show: false, message: '', type }), 2000);
   };
 
-  // 组件挂载时从 localStorage 恢复聊天记录
+  // 标记是否已经初始化（用于区分首次加载和后续路由变化）
+  const hasInitialized = useRef(false);
+  
+  // 监听路由变化，处理聊天记录
   useEffect(() => {
-    const savedMessages = localStorage.getItem('chatMessages');
-    if (savedMessages) {
-      try {
-        const parsedMessages = JSON.parse(savedMessages);
-        if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
-          setMessages(parsedMessages);
-        }
-      } catch (e) {
-        // 解析失败，保持空数组
-      }
+    console.log('[App] Route changed to:', location.pathname, 'hasInitialized:', hasInitialized.current);
+    
+    // 只在首页('/')处理
+    if (location.pathname !== '/') {
+      console.log('[App] Not on home page, skipping');
+      return;
     }
     
-    // 读取 cookie 中的 user_id 并打印
-    const userIdFromCookie = getCookie('user_id');
-    console.log('User ID from cookie:', userIdFromCookie);
-    console.log('All cookies:', document.cookie);
-  }, []);
+    // 检查是否是从详情页/列表页返回
+    const fromDetail = sessionStorage.getItem('from_detail_page');
+    console.log('[App] from_detail_page:', fromDetail, 'messages:', messages.length);
+    
+    if (fromDetail === 'true') {
+      // 从详情页/列表页返回
+      // 清除标记
+      sessionStorage.removeItem('from_detail_page');
+      
+      // 如果已经有消息（状态还在），不需要恢复
+      if (messages.length > 0) {
+        console.log('[App] Returning from detail, messages already in state');
+        hasInitialized.current = true;
+        return;
+      }
+      
+      // 如果没有消息（刷新页面导致状态丢失），从 localStorage 恢复
+      const savedMessages = localStorage.getItem('chatMessages');
+      if (savedMessages) {
+        try {
+          const parsedMessages = JSON.parse(savedMessages);
+          if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
+            console.log('[App] Restoring messages from localStorage:', parsedMessages.length);
+            setMessages(parsedMessages);
+          }
+        } catch (e) {
+          console.error('[App] Failed to restore messages:', e);
+        }
+      }
+      hasInitialized.current = true;
+      console.log('[App] Returned from detail page');
+    } else if (!hasInitialized.current) {
+      // 首次进入或刷新页面（没有从详情页返回的标记）
+      console.log('[App] First load or refresh, clearing messages');
+      localStorage.removeItem('chatMessages');
+      setMessages([]);
+      // 生成新的 sessionId
+      const newSessionId = generateSessionId();
+      setSessionId(newSessionId);
+      setCookie('session_id', newSessionId, 30);
+      hasInitialized.current = true;
+      console.log('[App] New sessionId:', newSessionId);
+    }
+  }, [location.pathname]);
 
-  // 保存聊天记录到 localStorage
+  // 保存聊天记录到 localStorage（用于从详情页返回时恢复）
   useEffect(() => {
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
+    if (messages.length > 0) {
+      console.log('[App] Saving messages to localStorage:', messages.length);
+      localStorage.setItem('chatMessages', JSON.stringify(messages));
+    }
   }, [messages]);
 
   const handleSend = async (text: string, images: string[]) => {
@@ -1346,6 +1381,10 @@ export default function App() {
     }, 800);
 
     try {
+      // 添加超时控制（60秒）
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      
       const response = await fetch('https://agent.wyoooni.net/webhook/4mon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1356,8 +1395,16 @@ export default function App() {
           codeStart: codeStart.length > 0 ? codeStart : ['6', '7', '9'],
           topN,
           searchType
-        })
+        }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
+
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       // 使用 ReadableStream 读取流式响应
       const reader = response.body?.getReader();
@@ -1369,12 +1416,121 @@ export default function App() {
 
       if (reader) {
         while (true) {
-          const { done, value } = await reader.read();
+          let done, value;
+          try {
+            const result = await reader.read();
+            done = result.done;
+            value = result.value;
+          } catch (readError: any) {
+            console.error('Stream read error:', readError);
+            // 如果已经收到组件数据，只是流读取中断，不视为错误
+            if (hasReceivedComponent) {
+              console.log('Stream interrupted but component already received');
+              break;
+            }
+            throw readError;
+          }
+          
           if (done) break;
           
           buffer += decoder.decode(value, { stream: true });
           
-          // 处理 buffer 中的完整行
+          // 【关键修复】尝试直接解析整个buffer（处理没有换行符的大JSON）
+          if (buffer.trim()) {
+            try {
+              const parsed = JSON.parse(buffer.trim());
+              // 成功解析，清空buffer
+              buffer = '';
+              
+              // 跳过内部数据格式
+              if (parsed.output !== undefined) {
+                continue;
+              }
+              
+              if (parsed.type === 'item' && parsed.content !== undefined) {
+                const content = parsed.content;
+                
+                if (typeof content === 'string') {
+                  // 尝试解析content是否为组件
+                  try {
+                    const parsedContent = JSON.parse(content);
+                    const isComponent = 
+                      (typeof parsedContent === 'object' && parsedContent !== null &&
+                       (parsedContent.element || (Array.isArray(parsedContent) && parsedContent.length > 0 && parsedContent[0].element)));
+                    
+                    if (parsedContent.output !== undefined) {
+                      // 跳过内部格式
+                    } else if (isComponent) {
+                      // 是组件数据 - 立即更新到状态
+                      hasReceivedComponent = true;
+                      const newComponents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+                      components = newComponents;
+                      
+                      // 收到组件后立即更新React状态
+                      setMessages(prev => {
+                        const newMessages = [...prev];
+                        const lastIndex = newMessages.length - 1;
+                        if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                          newMessages[lastIndex] = {
+                            ...newMessages[lastIndex],
+                            components: newComponents,
+                            text: parsedContent.element === '商品列表' ? '' : newMessages[lastIndex].text
+                          };
+                        }
+                        return newMessages;
+                      });
+                    } else {
+                      // 不是组件，当作文本
+                      textContent += content;
+                      setMessages(prev => {
+                        const newMessages = [...prev];
+                        const lastIndex = newMessages.length - 1;
+                        if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                          newMessages[lastIndex] = { ...newMessages[lastIndex], text: textContent };
+                        }
+                        return newMessages;
+                      });
+                    }
+                  } catch {
+                    // 不是JSON，当作文本
+                    textContent += content;
+                    setMessages(prev => {
+                      const newMessages = [...prev];
+                      const lastIndex = newMessages.length - 1;
+                      if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                        newMessages[lastIndex] = { ...newMessages[lastIndex], text: textContent };
+                      }
+                      return newMessages;
+                    });
+                  }
+                } else if (typeof content === 'object') {
+                  // content是对象
+                  hasReceivedComponent = true;
+                  const newComponents = Array.isArray(content) ? content : [content];
+                  components = newComponents;
+                  
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastIndex = newMessages.length - 1;
+                    if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                      newMessages[lastIndex] = {
+                        ...newMessages[lastIndex],
+                        components: newComponents,
+                        text: content.element === '商品列表' ? '' : newMessages[lastIndex].text
+                      };
+                    }
+                    return newMessages;
+                  });
+                }
+              }
+              // 成功处理，继续下一轮
+              continue;
+            } catch {
+              // 解析失败，说明buffer还不完整，继续按行处理
+            }
+          }
+          
+          // 处理 buffer 中的完整行（按换行符分割）
           const lines = buffer.split('\n');
           buffer = lines.pop() || ''; // 保留不完整的最后一行
           
@@ -1384,78 +1540,82 @@ export default function App() {
             
             try {
               const parsed = JSON.parse(trimmedLine);
-              // 跳过内部数据格式（如 {"output":"..."}），不显示到气泡
-              if (parsed.output !== undefined) {
-                continue;
-              }
+              // 跳过内部数据格式
+              if (parsed.output !== undefined) continue;
+              
               if (parsed.type === 'item' && parsed.content !== undefined) {
                 const content = parsed.content;
                 
-                // 判断 content 是否为 JSON 格式的组件数据
                 if (typeof content === 'string') {
-                  // 先尝试解析为 JSON（组件格式）
                   try {
                     const parsedContent = JSON.parse(content);
-                    // 只有解析后是对象/数组且包含 element 字段时才当作组件
                     const isComponent = 
                       (typeof parsedContent === 'object' && parsedContent !== null &&
                        (parsedContent.element || (Array.isArray(parsedContent) && parsedContent.length > 0 && parsedContent[0].element)));
                     
-                    // 跳过内部数据格式（如 {"output":"..."}），不显示到气泡
                     if (parsedContent.output !== undefined) {
-                      // 是内部数据格式，跳过不显示
+                      // 跳过
                     } else if (isComponent) {
-                      // 是组件数据
                       hasReceivedComponent = true;
-                      if (Array.isArray(parsedContent)) {
-                        components = parsedContent;
-                      } else {
-                        components = [parsedContent];
-                      }
-                    } else {
-                      // 解析成功但不是组件格式（如数字、纯字符串等），当作文本
-                      textContent += content;
-                      // 实时更新流式文本
+                      const newComponents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+                      components = newComponents;
+                      
                       setMessages(prev => {
                         const newMessages = [...prev];
                         const lastIndex = newMessages.length - 1;
                         if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
                           newMessages[lastIndex] = {
                             ...newMessages[lastIndex],
-                            text: textContent
+                            components: newComponents,
+                            text: parsedContent.element === '商品列表' ? '' : newMessages[lastIndex].text
                           };
+                        }
+                        return newMessages;
+                      });
+                    } else {
+                      textContent += content;
+                      setMessages(prev => {
+                        const newMessages = [...prev];
+                        const lastIndex = newMessages.length - 1;
+                        if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                          newMessages[lastIndex] = { ...newMessages[lastIndex], text: textContent };
                         }
                         return newMessages;
                       });
                     }
                   } catch {
-                    // 不是 JSON，当作纯文本流式拼接
                     textContent += content;
-                    // 实时更新流式文本
                     setMessages(prev => {
                       const newMessages = [...prev];
                       const lastIndex = newMessages.length - 1;
                       if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
-                        newMessages[lastIndex] = {
-                          ...newMessages[lastIndex],
-                          text: textContent
-                        };
+                        newMessages[lastIndex] = { ...newMessages[lastIndex], text: textContent };
                       }
                       return newMessages;
                     });
                   }
                 } else if (typeof content === 'object') {
-                  // content 是对象，直接作为组件
                   hasReceivedComponent = true;
-                  if (Array.isArray(content)) {
-                    components = content;
-                  } else {
-                    components = [content];
-                  }
+                  const newComponents = Array.isArray(content) ? content : [content];
+                  components = newComponents;
+                  
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastIndex = newMessages.length - 1;
+                    if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                      newMessages[lastIndex] = {
+                        ...newMessages[lastIndex],
+                        components: newComponents,
+                        text: content.element === '商品列表' ? '' : newMessages[lastIndex].text
+                      };
+                    }
+                    return newMessages;
+                  });
                 }
               }
             } catch (e) {
-              // 解析错误的行，忽略
+              // 解析错误，忽略
+              console.warn('Line parse failed:', trimmedLine.substring(0, 50));
             }
           }
         }
@@ -1464,54 +1624,41 @@ export default function App() {
         if (buffer.trim()) {
           try {
             const parsed = JSON.parse(buffer.trim());
-            // 跳过内部数据格式（如 {"output":"..."}），不显示到气泡
             if (parsed.output !== undefined) {
-              // 跳过，不处理
+              // 跳过
             } else if (parsed.type === 'item' && parsed.content !== undefined) {
               const content = parsed.content;
               if (typeof content === 'string') {
                 try {
                   const parsedContent = JSON.parse(content);
-                  // 只有解析后是对象/数组且包含 element 字段时才当作组件
                   const isComponent = 
                     (typeof parsedContent === 'object' && parsedContent !== null &&
                      (parsedContent.element || (Array.isArray(parsedContent) && parsedContent.length > 0 && parsedContent[0].element)));
                   
-                  // 跳过内部数据格式（如 {"output":"..."}），不显示到气泡
                   if (parsedContent.output !== undefined) {
-                    // 是内部数据格式，跳过不显示
+                    // 跳过
                   } else if (isComponent) {
                     hasReceivedComponent = true;
-                    components = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+                    const newComponents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+                    components = newComponents;
                   } else {
-                    // 解析成功但不是组件格式，当作文本
-                    if (!hasReceivedComponent) {
-                      textContent += content;
-                    }
+                    if (!hasReceivedComponent) textContent += content;
                   }
                 } catch {
-                  // 不是 JSON，当作文本
-                  if (!hasReceivedComponent) {
-                    textContent += content;
-                  }
+                  if (!hasReceivedComponent) textContent += content;
                 }
               } else if (typeof content === 'object') {
-                // content 是对象，需要检查是否是组件
-                const isComponent = 
-                  (content.element || (Array.isArray(content) && content.length > 0 && content[0].element));
+                const isComponent = (content.element || (Array.isArray(content) && content.length > 0 && content[0].element));
                 if (isComponent) {
                   hasReceivedComponent = true;
                   components = Array.isArray(content) ? content : [content];
                 } else {
-                  // 不是组件格式，当作文本
-                  if (!hasReceivedComponent) {
-                    textContent += JSON.stringify(content);
-                  }
+                  if (!hasReceivedComponent) textContent += JSON.stringify(content);
                 }
               }
             }
           } catch (e) {
-            // 忽略解析错误
+            console.warn('Final buffer parse failed:', buffer.trim().substring(0, 100));
           }
         }
       }
@@ -1563,8 +1710,38 @@ export default function App() {
         }
         return newMessages;
       });
-    } catch (error) {
-      showToast('请求失败，请稍后重试', 'error');
+    } catch (error: any) {
+      console.error('Request failed:', error);
+      
+      // 区分不同类型的错误
+      let errorMsg = '请求失败，请稍后重试';
+      if (error.name === 'AbortError') {
+        errorMsg = '请求超时，请稍后重试';
+      } else if (error.message?.includes('HTTP error')) {
+        errorMsg = `服务器错误: ${error.message}`;
+      }
+      
+      // 只有在没有收到组件数据时才显示错误
+      if (!hasReceivedComponent) {
+        showToast(errorMsg, 'error');
+        
+        // 更新消息显示错误状态
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastIndex = newMessages.length - 1;
+          if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+            newMessages[lastIndex] = {
+              ...newMessages[lastIndex],
+              text: '抱歉，请求处理失败，请稍后重试。',
+              components: []
+            };
+          }
+          return newMessages;
+        });
+      } else {
+        // 已经收到数据，只是流程出错，显示成功但不提示
+        console.log('Component received but error occurred:', error);
+      }
     } finally {
       clearInterval(stepInterval);
       setIsLoading(false);
@@ -1610,6 +1787,10 @@ export default function App() {
     }, 800);
 
     try {
+      // 添加超时控制（60秒）
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      
       const response = await fetch('https://agent.wyoooni.net/webhook/4mon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1620,8 +1801,16 @@ export default function App() {
           codeStart: codeStart.length > 0 ? codeStart : ['6', '7', '9'],
           topN,
           searchType
-        })
+        }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
+      
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       // 使用 ReadableStream 读取流式响应
       const reader = response.body?.getReader();
@@ -1633,14 +1822,111 @@ export default function App() {
 
       if (reader) {
         while (true) {
-          const { done, value } = await reader.read();
+          let done, value;
+          try {
+            const result = await reader.read();
+            done = result.done;
+            value = result.value;
+          } catch (readError: any) {
+            console.error('Stream read error:', readError);
+            if (hasReceivedComponent) {
+              console.log('Stream interrupted but component already received');
+              break;
+            }
+            throw readError;
+          }
+          
           if (done) break;
           
           buffer += decoder.decode(value, { stream: true });
           
+          // 【关键修复】尝试直接解析整个buffer（处理没有换行符的大JSON）
+          if (buffer.trim()) {
+            try {
+              const parsed = JSON.parse(buffer.trim());
+              buffer = '';
+              
+              if (parsed.output !== undefined) continue;
+              
+              if (parsed.type === 'item' && parsed.content !== undefined) {
+                const content = parsed.content;
+                
+                if (typeof content === 'string') {
+                  try {
+                    const parsedContent = JSON.parse(content);
+                    const isComponent = 
+                      (typeof parsedContent === 'object' && parsedContent !== null &&
+                       (parsedContent.element || (Array.isArray(parsedContent) && parsedContent.length > 0 && parsedContent[0].element)));
+                    
+                    if (parsedContent.output !== undefined) {
+                      // 跳过
+                    } else if (isComponent) {
+                      hasReceivedComponent = true;
+                      const newComponents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+                      components = newComponents;
+                      
+                      setMessages(prev => {
+                        const newMessages = [...prev];
+                        const lastIndex = newMessages.length - 1;
+                        if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                          newMessages[lastIndex] = {
+                            ...newMessages[lastIndex],
+                            components: newComponents,
+                            text: parsedContent.element === '商品列表' ? '' : newMessages[lastIndex].text
+                          };
+                        }
+                        return newMessages;
+                      });
+                    } else {
+                      textContent += content;
+                      setMessages(prev => {
+                        const newMessages = [...prev];
+                        const lastIndex = newMessages.length - 1;
+                        if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                          newMessages[lastIndex] = { ...newMessages[lastIndex], text: textContent };
+                        }
+                        return newMessages;
+                      });
+                    }
+                  } catch {
+                    textContent += content;
+                    setMessages(prev => {
+                      const newMessages = [...prev];
+                      const lastIndex = newMessages.length - 1;
+                      if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                        newMessages[lastIndex] = { ...newMessages[lastIndex], text: textContent };
+                      }
+                      return newMessages;
+                    });
+                  }
+                } else if (typeof content === 'object') {
+                  hasReceivedComponent = true;
+                  const newComponents = Array.isArray(content) ? content : [content];
+                  components = newComponents;
+                  
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastIndex = newMessages.length - 1;
+                    if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                      newMessages[lastIndex] = {
+                        ...newMessages[lastIndex],
+                        components: newComponents,
+                        text: content.element === '商品列表' ? '' : newMessages[lastIndex].text
+                      };
+                    }
+                    return newMessages;
+                  });
+                }
+              }
+              continue;
+            } catch {
+              // 解析失败，继续按行处理
+            }
+          }
+          
           // 处理 buffer 中的完整行
           const lines = buffer.split('\n');
-          buffer = lines.pop() || ''; // 保留不完整的最后一行
+          buffer = lines.pop() || '';
           
           for (const line of lines) {
             const trimmedLine = line.trim();
@@ -1648,85 +1934,80 @@ export default function App() {
             
             try {
               const parsed = JSON.parse(trimmedLine);
-              // 跳过内部数据格式（如 {"output":"..."}），不显示到气泡
-              if (parsed.output !== undefined) {
-                continue;
-              }
+              if (parsed.output !== undefined) continue;
+              
               if (parsed.type === 'item' && parsed.content !== undefined) {
                 const content = parsed.content;
                 
-                // 判断 content 是否为 JSON 格式的组件数据
                 if (typeof content === 'string') {
-                  // 先尝试解析为 JSON（组件格式）
                   try {
                     const parsedContent = JSON.parse(content);
-                    // 只有解析后是对象/数组且包含 element 字段时才当作组件
                     const isComponent = 
                       (typeof parsedContent === 'object' && parsedContent !== null &&
                        (parsedContent.element || (Array.isArray(parsedContent) && parsedContent.length > 0 && parsedContent[0].element)));
                     
-                    // 跳过内部数据格式（如 {"output":"..."}），不显示到气泡
                     if (parsedContent.output !== undefined) {
-                      // 是内部数据格式，跳过不显示
+                      // 跳过
                     } else if (isComponent) {
-                      // 是组件数据
                       hasReceivedComponent = true;
-                      if (Array.isArray(parsedContent)) {
-                        components = parsedContent;
-                      } else {
-                        components = [parsedContent];
-                      }
-                    } else {
-                      // 解析成功但不是组件格式（如数字、纯字符串等），当作文本
-                      textContent += content;
-                      // 实时更新流式文本
+                      const newComponents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+                      components = newComponents;
+                      
                       setMessages(prev => {
                         const newMessages = [...prev];
                         const lastIndex = newMessages.length - 1;
                         if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
                           newMessages[lastIndex] = {
                             ...newMessages[lastIndex],
-                            text: textContent
+                            components: newComponents,
+                            text: parsedContent.element === '商品列表' ? '' : newMessages[lastIndex].text
                           };
+                        }
+                        return newMessages;
+                      });
+                    } else {
+                      textContent += content;
+                      setMessages(prev => {
+                        const newMessages = [...prev];
+                        const lastIndex = newMessages.length - 1;
+                        if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                          newMessages[lastIndex] = { ...newMessages[lastIndex], text: textContent };
                         }
                         return newMessages;
                       });
                     }
                   } catch {
-                    // 不是 JSON，当作纯文本流式拼接
                     textContent += content;
-                    // 实时更新流式文本
                     setMessages(prev => {
                       const newMessages = [...prev];
                       const lastIndex = newMessages.length - 1;
                       if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
-                        newMessages[lastIndex] = {
-                          ...newMessages[lastIndex],
-                          text: textContent
-                        };
+                        newMessages[lastIndex] = { ...newMessages[lastIndex], text: textContent };
                       }
                       return newMessages;
                     });
                   }
                 } else if (typeof content === 'object') {
-                  // content 是对象，需要检查是否是组件
-                  const isComponent = 
-                    (content.element || (Array.isArray(content) && content.length > 0 && content[0].element));
-                  if (isComponent) {
-                    hasReceivedComponent = true;
-                    if (Array.isArray(content)) {
-                      components = content;
-                    } else {
-                      components = [content];
+                  hasReceivedComponent = true;
+                  const newComponents = Array.isArray(content) ? content : [content];
+                  components = newComponents;
+                  
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastIndex = newMessages.length - 1;
+                    if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+                      newMessages[lastIndex] = {
+                        ...newMessages[lastIndex],
+                        components: newComponents,
+                        text: content.element === '商品列表' ? '' : newMessages[lastIndex].text
+                      };
                     }
-                  } else {
-                    // 不是组件格式，当作文本
-                    textContent += JSON.stringify(content);
-                  }
+                    return newMessages;
+                  });
                 }
               }
             } catch (e) {
-              // 解析错误的行，忽略
+              // 忽略
             }
           }
         }
@@ -1735,17 +2016,15 @@ export default function App() {
         if (buffer.trim()) {
           try {
             const parsed = JSON.parse(buffer.trim());
-            // 跳过内部数据格式（如 {"output":"..."}），不显示到气泡
             if (parsed.output !== undefined) {
-              // 跳过，不处理
+              // 跳过
             } else if (parsed.type === 'item' && parsed.content !== undefined) {
               const content = parsed.content;
               if (typeof content === 'string') {
                 try {
                   const parsedContent = JSON.parse(content);
-                  // 跳过内部数据格式（如 {"output":"..."}）
                   if (parsedContent.output !== undefined) {
-                    // 跳过，不处理
+                    // 跳过
                   } else if (
                     (typeof parsedContent === 'object' && parsedContent !== null &&
                      (parsedContent.element || (Array.isArray(parsedContent) && parsedContent.length > 0 && parsedContent[0].element)))
@@ -1753,28 +2032,22 @@ export default function App() {
                     hasReceivedComponent = true;
                     components = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
                   } else {
-                    if (!hasReceivedComponent) {
-                      textContent += content;
-                    }
+                    if (!hasReceivedComponent) textContent += content;
                   }
                 } catch {
-                  if (!hasReceivedComponent) {
-                    textContent += content;
-                  }
+                  if (!hasReceivedComponent) textContent += content;
                 }
               } else if (typeof content === 'object') {
                 if (content.element || (Array.isArray(content) && content.length > 0 && content[0].element)) {
                   hasReceivedComponent = true;
                   components = Array.isArray(content) ? content : [content];
                 } else {
-                  if (!hasReceivedComponent) {
-                    textContent += JSON.stringify(content);
-                  }
+                  if (!hasReceivedComponent) textContent += JSON.stringify(content);
                 }
               }
             }
           } catch (e) {
-            // 忽略解析错误
+            // 忽略
           }
         }
       }
@@ -1827,8 +2100,35 @@ export default function App() {
         }
         return newMessages;
       });
-    } catch (error) {
-      showToast('请求失败，请稍后重试', 'error');
+    } catch (error: any) {
+      console.error('Regenerate request failed:', error);
+      
+      // 区分不同类型的错误
+      let errorMsg = '请求失败，请稍后重试';
+      if (error.name === 'AbortError') {
+        errorMsg = '请求超时，请稍后重试';
+      } else if (error.message?.includes('HTTP error')) {
+        errorMsg = `服务器错误: ${error.message}`;
+      }
+      
+      // 只有在没有收到组件数据时才显示错误
+      if (!hasReceivedComponent) {
+        showToast(errorMsg, 'error');
+        
+        // 更新消息显示错误状态
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastIndex = newMessages.length - 1;
+          if (lastIndex >= 0 && newMessages[lastIndex].role === 'bot') {
+            newMessages[lastIndex] = {
+              ...newMessages[lastIndex],
+              text: '抱歉，请求处理失败，请稍后重试。',
+              components: []
+            };
+          }
+          return newMessages;
+        });
+      }
     } finally {
       clearInterval(stepInterval);
       setIsLoading(false);
@@ -1868,6 +2168,8 @@ export default function App() {
   };
 
   const handleProductClick = (product: Product, responseTime?: number) => {
+    // 设置标记，表示即将跳转到详情页
+    sessionStorage.setItem('from_detail_page', 'true');
     // 保存到 sessionStorage
     sessionStorage.setItem('currentProduct', JSON.stringify(product));
     // 跳转到详情页
@@ -1875,6 +2177,8 @@ export default function App() {
   };
 
   const handleExpandClick = (group: ProductGroup) => {
+    // 设置标记，表示即将跳转到列表页
+    sessionStorage.setItem('from_detail_page', 'true');
     // 保存到 sessionStorage
     sessionStorage.setItem('currentProductGroup', JSON.stringify(group));
     // 跳转到列表页
@@ -1984,7 +2288,7 @@ export default function App() {
       {/* 聊天区域 */}
       <div 
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-4"
+        className="flex-1 overflow-y-auto px-4 py-4 relative"
       >
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-400">
@@ -2014,6 +2318,26 @@ export default function App() {
           ))
         )}
         <div ref={messagesEndRef} />
+
+        {/* 置顶/置底按钮 - 垂直排列在右下角 */}
+        {messages.length > 0 && (
+          <div className="fixed right-4 bottom-52 flex flex-col gap-2 z-30">
+            <button
+              onClick={() => chatContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="w-10 h-10 bg-white/90 backdrop-blur shadow-lg rounded-full flex items-center justify-center text-gray-500 hover:text-orange-500 hover:bg-white transition-all border border-gray-100"
+              title="置顶"
+            >
+              <ChevronUp size={20} />
+            </button>
+            <button
+              onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+              className="w-10 h-10 bg-white/90 backdrop-blur shadow-lg rounded-full flex items-center justify-center text-gray-500 hover:text-orange-500 hover:bg-white transition-all border border-gray-100"
+              title="置底"
+            >
+              <ChevronDown size={20} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 输入区域 */}
