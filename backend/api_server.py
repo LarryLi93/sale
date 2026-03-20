@@ -2828,7 +2828,7 @@ class ProductEditRequest(BaseModel):
     className: Optional[str] = Field(None, description="布种")
     elem: Optional[str] = Field(None, description="成分")
     inelem: Optional[str] = Field(None, description="纱支")
-    series: Optional[str] = Field(None, description="产品线")
+    series: Optional[str] = Field(None, description="系列")
     emptyqty: Optional[str] = Field(None, description="空差")
     papertubeqty: Optional[str] = Field(None, description="纸筒")
     type_name: Optional[str] = Field(None, description="运营分类")
