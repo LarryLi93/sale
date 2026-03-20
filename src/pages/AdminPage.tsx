@@ -491,47 +491,71 @@ const AdminPage: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    chatList.map((item, index) => (
-                      <tr key={index} className="hover:bg-orange-50/30 transition-colors">
-                        <td className="px-4 py-3 text-sm text-gray-500">
-                          {(chatPage - 1) * chatPageSize + index + 1}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-800">
-                          <div className="truncate max-w-[120px]" title={item.people}>
-                            {item.people || '-'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-800">
-                          <div className="line-clamp-2" title={item.question}>
-                            {item.question || '-'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">
-                          <div className={`${expandedChatRows.has(index) ? '' : 'line-clamp-2'}`} title={item.answer}>
-                            {item.answer || '-'}
-                          </div>
-                          {item.answer && item.answer.length > 100 && (
-                            <button
-                              onClick={() => {
-                                const newExpanded = new Set(expandedChatRows);
-                                if (newExpanded.has(index)) {
-                                  newExpanded.delete(index);
-                                } else {
-                                  newExpanded.add(index);
-                                }
-                                setExpandedChatRows(newExpanded);
-                              }}
-                              className="text-xs text-orange-500 hover:text-orange-600 mt-1 font-medium"
-                            >
-                              {expandedChatRows.has(index) ? '收起' : '展开'}
-                            </button>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                          {item.chattime}
-                        </td>
-                      </tr>
-                    ))
+                    chatList.map((item, index) => {
+                      // 解析筛选条件
+                      let filterDisplay = '-';
+                      if (item.filters) {
+                        try {
+                          const filters = JSON.parse(item.filters);
+                          const parts = [];
+                          if (filters.topN) parts.push(`推荐${filters.topN}个`);
+                          if (filters.codeStart && Array.isArray(filters.codeStart) && filters.codeStart.length > 0) {
+                            parts.push(`${filters.codeStart.join(',')}系列`);
+                          }
+                          if (filters.searchType) parts.push(filters.searchType);
+                          filterDisplay = parts.join(' | ') || '-';
+                        } catch {
+                          filterDisplay = item.filters;
+                        }
+                      }
+                      
+                      return (
+                        <tr key={index} className="hover:bg-orange-50/30 transition-colors">
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {(chatPage - 1) * chatPageSize + index + 1}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-800">
+                            <div className="truncate max-w-[120px]" title={item.people}>
+                              {item.people || '-'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-800">
+                            <div className="line-clamp-2" title={item.question}>
+                              {item.question || '-'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            <div className={`${expandedChatRows.has(index) ? '' : 'line-clamp-2'}`} title={item.answer}>
+                              {item.answer || '-'}
+                            </div>
+                            {item.answer && item.answer.length > 100 && (
+                              <button
+                                onClick={() => {
+                                  const newExpanded = new Set(expandedChatRows);
+                                  if (newExpanded.has(index)) {
+                                    newExpanded.delete(index);
+                                  } else {
+                                    newExpanded.add(index);
+                                  }
+                                  setExpandedChatRows(newExpanded);
+                                }}
+                                className="text-xs text-orange-500 hover:text-orange-600 mt-1 font-medium"
+                              >
+                                {expandedChatRows.has(index) ? '收起' : '展开'}
+                              </button>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            <div className="truncate max-w-[120px]" title={filterDisplay}>
+                              {filterDisplay}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                            {item.chattime}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
