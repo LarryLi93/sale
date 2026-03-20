@@ -293,8 +293,7 @@ const AdminPage: React.FC = () => {
   const fetchFeedback = async () => {
     setFeedbackLoading(true);
     try {
-      // 如果有 user_id，传入 people 参数
-      const peopleParam = userId ? `&people=${encodeURIComponent(userId)}` : '';
+      // 管理页面显示所有用户的记录
       const res = await fetch(`${API_BASE_URL}/ai_agent_feedbacks?page=${feedbackPage}&page_size=${feedbackPageSize}`);
       const data = await res.json();
       
@@ -320,9 +319,8 @@ const AdminPage: React.FC = () => {
   const fetchChatRecords = async () => {
     setChatLoading(true);
     try {
-      // 如果有 user_id，传入 people 参数
-      const peopleParam = userId ? `&people=${encodeURIComponent(userId)}` : '';
-      const res = await fetch(`${API_BASE_URL}/chat_records?page=${chatPage}&page_size=${chatPageSize}${peopleParam}`);
+      // 管理页面显示所有用户的记录，不添加 people 筛选
+      const res = await fetch(`${API_BASE_URL}/chat_records?page=${chatPage}&page_size=${chatPageSize}`);
       const data = await res.json();
       
       if (data.success) {
