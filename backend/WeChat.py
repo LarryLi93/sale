@@ -25,12 +25,12 @@ class WeChat:
     def get_auth_url(self):
         """获取企业微信授权URL"""
         base_url = "https://open.weixin.qq.com/connect/oauth2/authorize"
-        redirect_uri_encoded = urllib.parse.quote_plus(f"{self.redirect_uri}/api/auth/callback")
+        redirect_uri_encoded = urllib.parse.quote(f"{self.redirect_uri}/api/auth/callback")
         auth_url = (
             f"{base_url}?appid={self.corp_id}"
             f"&redirect_uri={redirect_uri_encoded}"
             f"&response_type=code"
-            f"&scope=snsapi_userinfo"
+            f"&scope=snsapi_base"
             f"&agentid={self.agent_id}"
             "#wechat_redirect"
         )
