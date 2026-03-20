@@ -2321,7 +2321,7 @@ export default function App() {
 
         {/* 置顶/置底按钮 - 垂直排列在右下角 */}
         {messages.length > 0 && (
-          <div className="fixed right-4 bottom-52 flex flex-col gap-2 z-30">
+          <div className="fixed right-4 bottom-80 flex flex-col gap-2 z-30">
             <button
               onClick={() => chatContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
               className="w-10 h-10 bg-white/90 backdrop-blur shadow-lg rounded-full flex items-center justify-center text-gray-500 hover:text-orange-500 hover:bg-white transition-all border border-gray-100"
