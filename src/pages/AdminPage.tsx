@@ -116,6 +116,7 @@ interface ChatRecordItem {
   chattime: string;
   question: string;
   answer: string;
+  filters?: string;  // 筛选条件 JSON 字符串
 }
 
 const AdminPage: React.FC = () => {
@@ -469,13 +470,14 @@ const AdminPage: React.FC = () => {
                     <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-32">对话人</th>
                     <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[200px]">问题</th>
                     <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[250px]">回答</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-32">条件筛选</th>
                     <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-40">时间</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {chatLoading ? (
                     <tr>
-                      <td colSpan={5} className="py-20 text-center">
+                      <td colSpan={6} className="py-20 text-center">
                         <div className="flex flex-col items-center gap-3">
                           <Loader2 className="animate-spin text-orange-500" size={32} />
                           <span className="text-gray-500 text-sm font-medium">正在获取问答记录...</span>
@@ -484,7 +486,7 @@ const AdminPage: React.FC = () => {
                     </tr>
                   ) : chatList.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-20 text-center text-gray-500 text-sm">
+                      <td colSpan={6} className="py-20 text-center text-gray-500 text-sm">
                         暂无问答记录
                       </td>
                     </tr>

@@ -2142,6 +2142,13 @@ export default function App() {
       // 从 cookie 读取 user_id
       const userId = getCookie('user_id') || sessionId;
       
+      // 构建筛选条件
+      const filters = {
+        topN,
+        codeStart: codeStart.length > 0 ? codeStart : ['6', '7', '9'],
+        searchType
+      };
+      
       await fetch(`${import.meta.env.VITE_API_URL}/api/save_chat_record`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2149,7 +2156,8 @@ export default function App() {
           agent: 'sale',
           people: userId,
           question,
-          answer
+          answer,
+          filters: JSON.stringify(filters)
         })
       });
     } catch (error) {

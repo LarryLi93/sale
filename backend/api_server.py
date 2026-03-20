@@ -2385,6 +2385,7 @@ class ChatRecordRequest(BaseModel):
     people: str
     question: str
     answer: str
+    filters: Optional[str] = None  # 筛选条件 JSON 字符串
 
 @app.post("/api/save_chat_record")
 async def save_chat_record(request: ChatRecordRequest):
@@ -2404,15 +2405,16 @@ async def save_chat_record(request: ChatRecordRequest):
             with conn.cursor() as cursor:
                 insert_sql = """
                     INSERT INTO ai_product_chat_v1 
-                    (agent, people, chattime, question, answer) 
-                    VALUES (%s, %s, %s, %s, %s)
+                    (agent, people, chattime, question, answer, filters) 
+                    VALUES (%s, %s, %s, %s, %s, %s)
                 """
                 cursor.execute(insert_sql, [
                     data.agent or 'sale',
                     data.people,
                     now_str,
                     data.question,
-                    data.answer
+                    data.answer,
+                    data.filters or ''
                 ])
                 conn.commit()
                 conn.close()
@@ -2444,15 +2446,16 @@ async def save_chat_record(request: ChatRecordRequest):
                     # 重试插入
                     insert_sql = """
                         INSERT INTO ai_product_chat_v1 
-                        (agent, people, chattime, question, answer) 
-                        VALUES (%s, %s, %s, %s, %s)
+                        (agent, people, chattime, question, answer, filters) 
+                        VALUES (%s, %s, %s, %s, %s, %s)
                     """
                     cursor.execute(insert_sql, [
                         data.agent or 'sale',
                         data.people,
                         now_str,
                         data.question,
-                        data.answer
+                        data.answer,
+                        data.filters or ''
                     ])
                     conn.commit()
                     conn.close()
@@ -2586,7 +2589,7 @@ async def get_chat_records(
                 
                 # 查询列表
                 list_sql = f"""
-                    SELECT agent, people, chattime, question, answer
+                    SELECT agent, people, chattime, question, answer, filters
                     FROM ai_product_chat_v1 
                     {where_sql}
                     ORDER BY chattime DESC 
@@ -2613,7 +2616,8 @@ async def get_chat_records(
                 "people": row.get('people'),
                 "chattime": row.get('chattime'),
                 "question": row.get('question'),
-                "answer": row.get('answer')
+                "answer": row.get('answer'),
+                "filters": row.get('filters', '')
             } for row in rows
         ]
     }
