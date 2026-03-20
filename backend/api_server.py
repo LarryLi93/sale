@@ -332,7 +332,7 @@ QUERY_PARAM_CN_MAPPING = {
     'className': '布种',
     'elem': '成分',
     'inelem': '纱支',
-    'series': '产品线',
+    'series': '系列',
     'emptyqty': '空差',
     'papertubeqty': '纸筒',
     'type_name': '运营分类',
