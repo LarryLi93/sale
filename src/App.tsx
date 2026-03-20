@@ -1136,6 +1136,9 @@ export default function App() {
     return existingSessionId || '';
   });
   
+  // 保存最后一次发送给 N8N 的查询参数（用于记录筛选条件）
+  const lastQueryParamsRef = useRef<any>(null);
+  
   // 获取授权 URL
   const fetchAuthUrl = async (loginType: string) => {
     try {
@@ -1380,6 +1383,17 @@ export default function App() {
       });
     }, 800);
 
+    // 记录发送给 N8N 的查询参数
+    const queryParams = { 
+      chatInput: text,
+      sessionId,
+      imageUrl: images || [],
+      codeStart: codeStart.length > 0 ? codeStart : ['6', '7', '9'],
+      topN,
+      searchType
+    };
+    lastQueryParamsRef.current = queryParams;
+    
     try {
       // 添加超时控制（60秒）
       const controller = new AbortController();
@@ -1388,14 +1402,7 @@ export default function App() {
       const response = await fetch('https://agent.wyoooni.net/webhook/4mon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          chatInput: text,
-          sessionId,
-          imageUrl: images || [],
-          codeStart: codeStart.length > 0 ? codeStart : ['6', '7', '9'],
-          topN,
-          searchType
-        }),
+        body: JSON.stringify(queryParams),
         signal: controller.signal
       });
       
@@ -1693,8 +1700,8 @@ export default function App() {
         }
       }
       
-      // 保存问答记录
-      saveChatRecord(text, answerContent, Array.from(productCodeSet));
+      // 保存问答记录（传入 N8N 查询参数）
+      saveChatRecord(text, answerContent, lastQueryParamsRef.current, Array.from(productCodeSet));
       
       setMessages(prev => {
         const newMessages = [...prev];
@@ -1786,6 +1793,17 @@ export default function App() {
       });
     }, 800);
 
+    // 记录发送给 N8N 的查询参数
+    const queryParams = { 
+      chatInput: lastUserMessage.text,
+      sessionId,
+      imageUrl: lastUserMessage.images || [],
+      codeStart: codeStart.length > 0 ? codeStart : ['6', '7', '9'],
+      topN,
+      searchType
+    };
+    lastQueryParamsRef.current = queryParams;
+    
     try {
       // 添加超时控制（60秒）
       const controller = new AbortController();
@@ -1794,14 +1812,7 @@ export default function App() {
       const response = await fetch('https://agent.wyoooni.net/webhook/4mon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          chatInput: lastUserMessage.text,
-          sessionId,
-          imageUrl: lastUserMessage.images || [],
-          codeStart: codeStart.length > 0 ? codeStart : ['6', '7', '9'],
-          topN,
-          searchType
-        }),
+        body: JSON.stringify(queryParams),
         signal: controller.signal
       });
       
@@ -2082,9 +2093,9 @@ export default function App() {
         }
       }
       
-      // 保存问答记录
+      // 保存问答记录（传入 N8N 查询参数）
       if (lastUserMessage) {
-        saveChatRecord(lastUserMessage.text, answerContent, productCodes);
+        saveChatRecord(lastUserMessage.text, answerContent, lastQueryParamsRef.current, productCodes);
       }
       
       setMessages(prev => {
@@ -2137,17 +2148,10 @@ export default function App() {
   };
 
   // 保存问答记录到后端
-  const saveChatRecord = async (question: string, answer: string, productCodes?: string[]) => {
+  const saveChatRecord = async (question: string, answer: string, queryFilters?: any, productCodes?: string[]) => {
     try {
       // 从 cookie 读取 user_id
       const userId = getCookie('user_id') || sessionId;
-      
-      // 构建筛选条件
-      const filters = {
-        topN,
-        codeStart: codeStart.length > 0 ? codeStart : ['6', '7', '9'],
-        searchType
-      };
       
       await fetch(`${import.meta.env.VITE_API_URL}/api/save_chat_record`, {
         method: 'POST',
@@ -2157,7 +2161,7 @@ export default function App() {
           people: userId,
           question,
           answer,
-          filters: JSON.stringify(filters)
+          filters: queryFilters ? JSON.stringify(queryFilters) : ''
         })
       });
     } catch (error) {

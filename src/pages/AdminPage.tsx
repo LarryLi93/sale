@@ -492,20 +492,25 @@ const AdminPage: React.FC = () => {
                     </tr>
                   ) : (
                     chatList.map((item, index) => {
-                      // 解析筛选条件
+                      // 解析 N8N 查询参数
                       let filterDisplay = '-';
                       if (item.filters) {
                         try {
                           const filters = JSON.parse(item.filters);
                           const parts = [];
+                          // 显示主要查询参数
                           if (filters.topN) parts.push(`推荐${filters.topN}个`);
                           if (filters.codeStart && Array.isArray(filters.codeStart) && filters.codeStart.length > 0) {
-                            parts.push(`${filters.codeStart.join(',')}系列`);
+                            parts.push(`${filters.codeStart.join('')}系`);
                           }
-                          if (filters.searchType) parts.push(filters.searchType);
+                          if (filters.searchType && filters.searchType !== '精准') parts.push(filters.searchType);
+                          // 显示图片标识
+                          if (filters.imageUrl && Array.isArray(filters.imageUrl) && filters.imageUrl.length > 0) {
+                            parts.push(`图片${filters.imageUrl.length}张`);
+                          }
                           filterDisplay = parts.join(' | ') || '-';
                         } catch {
-                          filterDisplay = item.filters;
+                          filterDisplay = item.filters.substring(0, 50);
                         }
                       }
                       
