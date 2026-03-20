@@ -2403,19 +2403,38 @@ async def save_chat_record(request: ChatRecordRequest):
         try:
             conn = get_db_connection()
             with conn.cursor() as cursor:
-                insert_sql = """
-                    INSERT INTO ai_product_chat_v1 
-                    (agent, people, chattime, question, answer, filters) 
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """
-                cursor.execute(insert_sql, [
-                    data.agent or 'sale',
-                    data.people,
-                    now_str,
-                    data.question,
-                    data.answer,
-                    data.filters or ''
-                ])
+                # 尝试插入（带 filters 字段）
+                try:
+                    insert_sql = """
+                        INSERT INTO ai_product_chat_v1 
+                        (agent, people, chattime, question, answer, filters) 
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """
+                    cursor.execute(insert_sql, [
+                        data.agent or 'sale',
+                        data.people,
+                        now_str,
+                        data.question,
+                        data.answer,
+                        data.filters or ''
+                    ])
+                except Exception as col_error:
+                    # 如果 filters 字段不存在，使用旧版插入语句
+                    if "filters" in str(col_error):
+                        insert_sql = """
+                            INSERT INTO ai_product_chat_v1 
+                            (agent, people, chattime, question, answer) 
+                            VALUES (%s, %s, %s, %s, %s)
+                        """
+                        cursor.execute(insert_sql, [
+                            data.agent or 'sale',
+                            data.people,
+                            now_str,
+                            data.question,
+                            data.answer
+                        ])
+                    else:
+                        raise col_error
                 conn.commit()
                 conn.close()
                 return {"success": True}
@@ -2443,19 +2462,18 @@ async def save_chat_record(request: ChatRecordRequest):
                     """
                     cursor.execute(create_table_sql)
                     conn.commit()
-                    # 重试插入
+                    # 重试插入（旧版语句，不带 filters）
                     insert_sql = """
                         INSERT INTO ai_product_chat_v1 
-                        (agent, people, chattime, question, answer, filters) 
-                        VALUES (%s, %s, %s, %s, %s, %s)
+                        (agent, people, chattime, question, answer) 
+                        VALUES (%s, %s, %s, %s, %s)
                     """
                     cursor.execute(insert_sql, [
                         data.agent or 'sale',
                         data.people,
                         now_str,
                         data.question,
-                        data.answer,
-                        data.filters or ''
+                        data.answer
                     ])
                     conn.commit()
                     conn.close()
@@ -2587,16 +2605,31 @@ async def get_chat_records(
                 total_res = cursor.fetchone()
                 total = total_res.get('total', 0) if total_res else 0
                 
-                # 查询列表
-                list_sql = f"""
-                    SELECT agent, people, chattime, question, answer, filters
-                    FROM ai_product_chat_v1 
-                    {where_sql}
-                    ORDER BY chattime DESC 
-                    LIMIT %s OFFSET %s
-                """
-                cursor.execute(list_sql, params + [size, offset])
-                rows = cursor.fetchall()
+                # 查询列表（兼容旧数据库没有 filters 字段的情况）
+                try:
+                    list_sql = f"""
+                        SELECT agent, people, chattime, question, answer, filters
+                        FROM ai_product_chat_v1 
+                        {where_sql}
+                        ORDER BY chattime DESC 
+                        LIMIT %s OFFSET %s
+                    """
+                    cursor.execute(list_sql, params + [size, offset])
+                    rows = cursor.fetchall()
+                except Exception as col_error:
+                    # 如果 filters 字段不存在，使用兼容查询
+                    if "filters" in str(col_error):
+                        list_sql = f"""
+                            SELECT agent, people, chattime, question, answer, '' as filters
+                            FROM ai_product_chat_v1 
+                            {where_sql}
+                            ORDER BY chattime DESC 
+                            LIMIT %s OFFSET %s
+                        """
+                        cursor.execute(list_sql, params + [size, offset])
+                        rows = cursor.fetchall()
+                    else:
+                        raise col_error
                 conn.close()
                 return total, rows
         except Exception as e:
