@@ -267,11 +267,11 @@ const MaterialList = ({
                 alt={item.name || `素材${idx + 1}`}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400 text-[10px] p-2 text-center">图片加载失败</div>';
+                  (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400 text-[9px] p-2 text-center">图片加载失败</div>';
                 }}
               />
-              <div className="absolute inset-x-0 bottom-0 bg-black/40 p-1 translate-y-full group-hover:translate-y-0 transition-transform">
-                <p className="text-[10px] text-white truncate">{item.name}</p>
+              <div className="absolute inset-x-0 bottom-0 bg-black/60 px-1 py-0.5 ">
+                <p className="text-[9px] text-white truncate">{item.name}</p>
               </div>
             </div>
           );
@@ -473,7 +473,7 @@ const ChatMessage = ({
                       return (
                         <React.Fragment key={idx}>
                           <div className="flex flex-col items-center gap-1">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium transition-all duration-300 ${
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-medium transition-all duration-300 ${
                               isCompleted 
                                 ? 'bg-green-500 text-white' 
                                 : isCurrent 
