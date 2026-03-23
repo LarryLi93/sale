@@ -817,6 +817,7 @@ const ChatInput = ({
                 <ImageIcon size={20} />
               </button>
               */}
+              {/* 语音录入按钮已隐藏
               <button 
                 onPointerDown={(e) => {
                   e.preventDefault();
@@ -833,6 +834,7 @@ const ChatInput = ({
               >
                 <Mic size={20} className={isRecording ? 'animate-pulse' : ''} />
               </button>
+              */}
               <button 
                 onClick={handleSend}
                 disabled={!displayText.trim() || disabled}
