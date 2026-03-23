@@ -406,7 +406,7 @@ export default function ProductList({
                  >
                    {/* 商品图片 */}
                    {imageUrl && (
-                     <div className="w-[50px] h-[50px] rounded-lg overflow-hidden bg-gray-100 mr-3 flex-shrink-0">
+                     <div className="w-[50px] h-[50px] rounded-lg overflow-hidden bg-gray-100 mr-3 flex-shrink-0 relative">
                        <img 
                          src={imageUrl} 
                          alt={product.name}
@@ -415,13 +415,15 @@ export default function ProductList({
                            (e.target as HTMLImageElement).style.display = 'none';
                          }}
                        />
+                       {/* 素材名称悬浮显示在图片底部 */}
+                       <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5">
+                         <span className="text-[9px] text-white line-clamp-1">{product.name}</span>
+                       </div>
                      </div>
                    )}
                    <div className="flex-1 min-w-0">
                      <div className="flex items-center gap-2 mb-2">
                        <h4 className="font-bold text-gray-900 text-base flex-shrink-0">{product.code}</h4>
-                       <span className="text-sm text-gray-600">|</span>
-                       <span className="text-xs text-gray-700 line-clamp-1">{product.name}</span>
                        {product.fabric_erp && (
                          <>
                            <span className="text-sm text-gray-600">|</span>
